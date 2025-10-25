@@ -1,25 +1,15 @@
-
-    {
-      "functions": { "source": "functions", "runtime": "nodejs20" },
-      "hosting": {
-        "public": "public",
-        "ignore": ["firebase.json","**/.*","**/node_modules/**"],
-        "rewrites": [
-          { "source": "/api/affiliate/quote", "function": "affiliateQuote" },
-          { "source": "/api/affiliate/settle", "function": "affiliateSettle" },
-          { "source": "/api/ad/submit", "function": "adSubmit" },
-          { "source": "/api/evidence/anchor", "function": "evidenceAnchor" },
-          { "source": "/api/evidence/verify", "function": "evidenceVerify" }
-        ],
-        "headers": [
-          { "source": "/api/**", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
-        ]
-      },
-      "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },
-      "emulators": {
-        "functions": { "port": 5001 },
-        "firestore": { "port": 8080 },
-        "auth": { "port": 9099 }
+{
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs18"
+  },
+  "hosting": {
+    "public": "public",
+    "rewrites": [
+      {
+        "source": "/api/**",
+        "function": "api"
       }
-    }
-    
+    ]
+  }
+}

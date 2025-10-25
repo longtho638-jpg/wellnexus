@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Status Page — WellNexus Evidence</title>
+  </head>
+  <body class="bg-gray-50 text-gray-800 flex flex-col items-center min-h-screen p-6">
+    <h1 class="text-2xl font-bold mb-4 text-blue-700">WellNexus Evidence Status</h1>
+
+    <div id="ledger" class="w-full max-w-2xl bg-white shadow-lg rounded-xl p-4"></div>
+
+    <section class="mt-8 bg-white shadow rounded-xl p-4 max-w-2xl w-full">
+      <h2 class="text-lg font-bold text-green-700 mb-2">SLA Metrics (7–30 ngày)</h2>
+      <div id="sla" class="text-sm text-gray-700">Đang tải...</div>
+    </section>
+
+    <section class="mt-6 bg-white shadow rounded-xl p-4 max-w-2xl w-full">
+      <h2 class="text-lg font-bold text-indigo-700 mb-2">Forecast Proof</h2>
+      <div id="forecast" class="text-sm text-gray-700">Đang tải...</div>
+    </section>
+
+    <div class="mt-6">
+      <input id="root" placeholder="Nhập root hash để kiểm tra" class="border p-2 rounded w-80" />
+      <button id="check" class="ml-2 bg-blue-600 text-white px-4 py-2 rounded">Verify</button>
+    </div>
+
+    <div id="result" class="mt-4 text-sm text-gray-600"></div>
+
+    <script>
+      async function loadLedger() {
+        try {
+          const res = await fetch("/.well-known/evidence.json");
+          if (!res.ok) throw new Error("Không thể tải ledger");
+          const data = await res.json();
+          document.getElementById("ledger").innerHTML = `
+            <p><strong>Root:</strong> ${data.rootHash}</p>
+            <p><strong>Docs:</strong> ${data.totalDocs}</p>
+            <p><strong>Timestamp:</strong> ${data.ts}</p>
+            <p><strong>Signature:</strong> ${data.signature.slice(0, 16)}...</p>
+            <img src="/api/evidence/badge?root=${data.rootHash}" class="mt-2" />
+          `;
+        } catch (error) {
+          document.getElementById("ledger").innerText = "Chưa có dữ liệu ledger.";
+        }
+      }
+
+      async function loadSLA() {
+        try {
+          const res = await fetch("/api/metrics/summary");
+          if (!res.ok) throw new Error("Không thể tải SLA");
+          const data = await res.json();
+          document.getElementById("sla").innerHTML = `
+            <p>Uptime 7 ngày: <strong>${(data.avg7.uptime*100).toFixed(2)}%</strong></p>
+            <p>Uptime 30 ngày: <strong>${(data.avg30.uptime*100).toFixed(2)}%</strong></p>
+            <p>Verify Pass Rate 7 ngày: <strong>${(data.avg7.verifyRate*100).toFixed(2)}%</strong></p>
+            <p>Verify Pass Rate 30 ngày: <strong>${(data.avg30.verifyRate*100).toFixed(2)}%</strong></p>
+          `;
+        } catch (error) {
+          document.getElementById("sla").innerText = "Chưa có dữ liệu SLA.";
+        }
+      }
+
+      async function loadForecast() {
+        try {
+            const res = await fetch("/.well-known/forecast.json");
+            if (!res.ok) throw new Error("Không thể tải forecast");
+            const m = await res.json();
+            const el = document.getElementById("forecast");
+            el.innerHTML = `
+                <p><b>Root:</b> ${m.merkleRoot}</p>
+                <p><b>Leaves:</b> ${m.leaves}</p>
+                <p><b>Created:</b> ${m.createdAt}</p>
+                <img src="/api/forecast/badge?root=${m.merkleRoot}" class="mt-2" />
+            `;
+        } catch (error) {
+            document.getElementById("forecast").innerText = "Chưa có dữ liệu forecast.";
+        }
+      }
+
+      document.getElementById("check").addEventListener("click", async () => {
+        const root = document.getElementById("root").value;
+        if (!root) return;
+        document.getElementById("result").innerText = "Đang kiểm tra...";
+        try {
+          const res = await fetch(`/api/evidence/verify?root=${root}`);
+          const data = await res.json();
+          document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+        } catch (error) {
+          document.getElementById("result").innerText = "Lỗi khi xác minh.";
+        }
+      });
+
+      loadLedger();
+      loadSLA();
+      loadForecast();
+    </script>
+  </body>
+</html>

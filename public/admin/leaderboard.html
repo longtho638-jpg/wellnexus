@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Fairness Leaderboard — WellNexus</title>
+</head>
+<body class="bg-gray-50 p-6">
+  <h1 class="text-2xl font-bold text-green-700 mb-4">Bảng Xếp Hạng Công Bằng Đối Tác</h1>
+  <p id="summary" class="mb-4 text-sm text-gray-600"></p>
+  <table class="w-full text-sm bg-white shadow rounded-xl border">
+    <thead class="bg-green-100">
+      <tr>
+        <th class="p-2 text-left">#</th>
+        <th class="p-2 text-left">Đối tác</th>
+        <th class="p-2">Uptime</th>
+        <th class="p-2">Verify</th>
+        <th class="p-2">Rebate</th>
+        <th class="p-2">Fairness</th>
+      </tr>
+    </thead>
+    <tbody id="table"></tbody>
+  </table>
+
+  <script>
+    async function loadLeaderboard() {
+      const res = await fetch("/api/analytics/fairness");
+      const data = await res.json();
+      document.getElementById("summary").innerHTML =
+        `📊 Trung bình rebate: ${data.avgRebate.toFixed(2)} | 🔍 Bias spread: ${data.biasSpread}`;
+      document.getElementById("table").innerHTML = data.leaderboard
+        .map((p, i) => `
+          <tr class="border-t hover:bg-green-50">
+            <td class="p-2">${i + 1}</td>
+            <td class="p-2 font-medium">${p.name}</td>
+            <td class="p-2 text-center">${p.uptime}%</td>
+            <td class="p-2 text-center">${p.verifyRate}%</td>
+            <td class="p-2 text-center">${p.rebateRate}</td>
+            <td class="p-2 text-center font-semibold ${p.fairness > 0.9 ? 'text-green-600' : p.fairness > 0.7 ? 'text-yellow-600' : 'text-red-600'}">
+              ${p.fairness}
+            </td>
+          </tr>
+        `).join("");
+    }
+    loadLeaderboard();
+    setInterval(loadLeaderboard, 5000);
+  </script>
+</body>
+</html>

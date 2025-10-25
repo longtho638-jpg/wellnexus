@@ -1,20 +1,26 @@
-
-    {
-      "name": "wellnexus-functions",
-      "version": "1.0.0",
-      "main": "lib/index.js",
-      "scripts": {
-        "build": "tsc",
-        "serve": "firebase emulators:start --only functions",
-        "deploy": "firebase deploy --only functions"
-      },
-      "engines": { "node": "20" },
-      "dependencies": {
-        "firebase-admin": "^12.0.0",
-        "firebase-functions": "^5.1.1"
-      },
-      "devDependencies": {
-        "typescript": "^5.4.0"
-      }
-    }
-    
+{
+  "name": "wellnexus-functions",
+  "version": "1.0.0",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "tsc",
+    "lint": "eslint . --ext .ts",
+    "serve": "firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "18"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "eslint": "^8.56.0"
+  }
+}

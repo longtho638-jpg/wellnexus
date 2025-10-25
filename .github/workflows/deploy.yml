@@ -1,146 +1,37 @@
-name: 🚀 WellNexus Deploy
+name: 🚀 Deploy WellNexus (Staging + Prod 2-Eyes)
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
-env:
-  PROJECT_ID: wellnexus-87243274-b52ca
-  REGION: asia-southeast1
-  FIREBASE_CLI_EXPERIMENTS: webframeworks
-  DEPLOY_PREVIEW_CHANNEL: staging
-  DEPLOY_PROD_CHANNEL: prod
-  SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-  APPROVERS: "ops-leads@company.com,audit@company.com"
-
 jobs:
-  build-test:
-    name: 🧪 Build & Smoke Test
+  use-common:
+    uses: ./.github/workflows/workflow-common.reuseable.yml
+    with:
+      environment: staging
+    secrets: inherit
+
+  deploy:
+    needs: use-common
     runs-on: ubuntu-latest
-
     steps:
-      - name: 🏗️ Checkout repo
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: 📦 Install deps
-        run: npm ci --prefix functions
-
-      - name: 🧩 Build functions
-        run: npm run build --prefix functions
-
-      - name: 🚦 Run smoke tests
-        run: |
-          npm install newman -g
-          newman run tests/SMOKE_TESTS.json || exit 1
-
-      - name: 🧾 Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build
-          path: functions/lib
-
-  deploy-staging:
-    name: 🚀 Deploy to Staging
-    needs: build-test
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    environment: staging
-
-    steps:
-      - name: 🏗️ Checkout repo
-        uses: actions/checkout@v4
-      
-      - name: 📥 Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: functions/lib
-
-      - name: 🔑 Auth Firebase
-        uses: 'google-github-actions/auth@v2'
-        with:
-          workload_identity_provider: 'projects/705472029911/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-          service_account: 'firebase-deploy@wellnexus-87243274-b52ca.iam.gserviceaccount.com'
-
-      - name: 🚀 Deploy (staging)
+      - uses: actions/checkout@v4
+      - name: 🚀 Deploy lên ${{ inputs.environment }}
         run: |
           npm install -g firebase-tools
-          firebase deploy --only functions,hosting,firestore:rules,firestore:indexes --force --project=$PROJECT_ID
+          firebase use $PROJECT_ID
+          firebase deploy --only functions,hosting,firestore:rules,firestore:indexes --project=$PROJECT_ID
+
+      - name: ✅ Smoke test affiliateQuote
+        run: |
+          curl -X POST https://$PROJECT_ID.web.app/api/affiliate/quote \
+          -H "Content-Type: application/json" \
+          -d '{"cart_total_vnd":1000000,"rank":"KhoiNghiep"}' || exit 1
 
       - name: 📣 Slack notify
         if: success()
         run: |
+          MSG="✅ *Staging deploy thành công!* (<https://$PROJECT_ID.web.app|Mở site>)"
           curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"✅ Deploy staging WellNexus thành công! <https://$PROJECT_ID.web.app|Xem site>\"}" \
-          $SLACK_WEBHOOK_URL
-
-  approve-prod:
-    name: 👀 Two-Eyes Approval
-    runs-on: ubuntu-latest
-    needs: deploy-staging
-    environment:
-      name: production
-      url: https://${{ env.PROJECT_ID }}.web.app
-    outputs:
-      approved: ${{ steps.decision.outputs.approved }}
-
-    steps:
-      - name: ✋ Manual approval gate
-        id: decision
-        uses: trstringer/manual-approval@v1
-        with:
-          approvers: ${{ env.APPROVERS }}
-          secret: ${{ secrets.GITHUB_TOKEN }}
-          minimum-approvals: 2
-          timeout-minutes: 30
-
-  deploy-prod:
-    name: 🚀 Promote to Production
-    needs: approve-prod
-    if: needs.approve-prod.outputs.approved == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-      
-    steps:
-      - name: 🏗️ Checkout repo
-        uses: actions/checkout@v4
-
-      - name: 📥 Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build
-          path: functions/lib
-
-      - name: 🔑 Auth Firebase
-        uses: 'google-github-actions/auth@v2'
-        with:
-          workload_identity_provider: 'projects/705472029911/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
-          service_account: 'firebase-deploy@wellnexus-87243274-b52ca.iam.gserviceaccount.com'
-
-      - name: 🚀 Promote → Prod
-        run: |
-          npm install -g firebase-tools
-          firebase hosting:channel:deploy prod --project=$PROJECT_ID
-
-      - name: 🔁 Rollback hook (auto)
-        if: failure()
-        run: |
-          firebase hosting:rollback prod --project=$PROJECT_ID || true
-
-      - name: 📣 Slack Notify Prod
-        if: success()
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-          --data "{\"text\":\"✅ WellNexus đã promote lên PROD thành công (2-eyes OK).\"}" \
-          $SLACK_WEBHOOK_URL
+            --data "{\"text\": \"$MSG\"}" ${{ secrets.SLACK_WEBHOOK_URL }}

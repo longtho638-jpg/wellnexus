@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Evidence Deep Audit — WellNexus</title>
+</head>
+<body class="bg-gray-50 p-6">
+  <h1 class="text-2xl font-bold text-purple-700 mb-4">Báo Cáo Phân Tích & Dự Báo Công Bằng</h1>
+  <p class="text-gray-600 mb-6 text-sm">Dữ liệu minh chứng, độ tin cậy, và rủi ro lệch chuẩn theo đối tác.</p>
+  <div id="container" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+
+  <script>
+    async function loadAudit() {
+      // In a real app, the admin key should be handled securely.
+      const adminKey = prompt("Enter Admin Key:", "demo");
+
+      try {
+        const res = await fetch("/api/audit/evidence", { headers: { "x-admin-key": adminKey } });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || "Authentication failed");
+        }
+        const data = await res.json();
+        const container = document.getElementById("container");
+        if (data.topBias && data.topBias.length > 0) {
+          container.innerHTML = data.topBias.map((p, i) => `
+            <div class="bg-white shadow p-4 rounded-xl">
+              <h2 class="text-lg font-semibold text-gray-800">#${i+1} ${p.name}</h2>
+              <p class="text-sm text-gray-600">Bias risk: <strong>${p.biasRisk}</strong></p>
+              <p class="text-sm text-gray-500">Uptime: ${(p.avgUptime*100).toFixed(2)}% | Verify: ${(p.avgVerify*100).toFixed(2)}%</p>
+              <div class="h-2 bg-gray-200 rounded mt-2">
+                <div style="width:${Math.min(100, p.biasRisk * 200)}%" 
+                     class="h-2 ${p.biasRisk > 0.1 ? 'bg-red-500' : 'bg-purple-500'} rounded">
+                </div>
+              </div>
+            </div>`).join("");
+        } else {
+          container.innerHTML = "<p>Không có dữ liệu phân tích hoặc không có đối tác nào.</p>";
+        }
+      } catch(e) {
+        document.getElementById("container").innerHTML = `<p class="text-red-500">Lỗi: ${e.message}</p>`;
+      }
+    }
+    loadAudit();
+  </script>
+</body>
+</html>

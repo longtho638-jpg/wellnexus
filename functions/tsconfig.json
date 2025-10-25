@@ -1,16 +1,11 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "outDir": "lib",
-    "sourceMap": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Node",
     "strict": true,
-    "target": "es2017",
-     "esModuleInterop": true
+    "esModuleInterop": true,
+    "outDir": "lib"
   },
-  "compileOnSave": true,
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

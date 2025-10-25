@@ -1,124 +1,73 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.evidenceVerify = exports.evidenceAnchor = exports.adSubmit = exports.affiliateSettle = exports.affiliateQuote = void 0;
-const functions = __importStar(require("firebase-functions/v2"));
-const admin = __importStar(require("firebase-admin"));
+exports.forecastBadge = exports.forecastVerify = exports.forecastManifestPublic = exports.signForecast = exports.predictFairness = exports.auditEvidence = exports.analyticsFairness = exports.onMetricsWrite = exports.onEvidenceWrite = exports.partnerDigest = exports.transparencyFeed = exports.metricsSummary = exports.metricsCollector = exports.partnersUpdate = exports.partnersList = exports.evidenceList = exports.evidenceBadge = exports.evidenceVerify = exports.publishEvidenceLedger = exports.channelAutoAttr = exports.channelGuard = exports.adStatus = exports.adSubmit = exports.affiliateSettle = exports.affiliateQuote = exports.onboardingStep = void 0;
+const admin = require("firebase-admin");
+// SEED
+const onboardingStep_1 = require("./onboardingStep");
+// TREE
+const affiliateQuote_1 = require("./affiliateQuote");
+const affiliateSettle_1 = require("./affiliateSettle");
+const adSubmit_1 = require("./adSubmit");
+const adStatus_1 = require("./adStatus");
+const channelGuard_1 = require("./channelGuard");
+const channelAutoAttr_1 = require("./channelAutoAttr");
+// FOREST
+const publishEvidenceLedger_1 = require("./publishEvidenceLedger");
+const evidenceVerify_1 = require("./evidenceVerify");
+const evidenceBadge_1 = require("./evidenceBadge");
+const partnersList_1 = require("./partnersList");
+const partnersUpdate_1 = require("./partnersUpdate");
+const evidenceList_1 = require("./evidenceList");
+const metricsCollector_1 = require("./metricsCollector");
+const metricsSummary_1 = require("./metricsSummary");
+const transparencyFeed_1 = require("./transparencyFeed");
+const partnerDigest_1 = require("./partnerDigest");
+const onEvidenceWrite_1 = require("./onEvidenceWrite");
+const onMetricsWrite_1 = require("./onMetricsWrite");
+const analyticsFairness_1 = require("./analyticsFairness");
+const auditEvidence_1 = require("./auditEvidence");
+const predictFairness_1 = require("./predictFairness");
+const signForecast_1 = require("./signForecast");
+const forecastManifestPublic_1 = require("./forecastManifestPublic");
+const forecastVerify_1 = require("./forecastVerify");
+const forecastBadge_1 = require("./forecastBadge");
 admin.initializeApp();
 const db = admin.firestore();
-exports.affiliateQuote = functions.https.onRequest(async (req, res) => {
-    try {
-        const { cart_total_vnd, rank } = req.body; // Removed unused ref_code
-        const net = Number(cart_total_vnd) || 0;
-        let pct = 0.10; // DirectAffiliate mặc định
-        if (rank === "KhoiNghiep")
-            pct = 0.21;
-        if (rank === null || rank === void 0 ? void 0 : rank.startsWith("DaiSu_Silver"))
-            pct = 0.21 + 0.09;
-        if (rank === null || rank === void 0 ? void 0 : rank.startsWith("DaiSu_Gold"))
-            pct = 0.21 + 0.12;
-        if (rank === null || rank === void 0 ? void 0 : rank.startsWith("DaiSu_Diamond"))
-            pct = 0.21 + 0.15;
-        const capped = Math.min(net * pct, net * 0.22);
-        const pit = Number(process.env.AFFILIATE_PIT_RATE || 0.1);
-        const tax = Math.round(capped * pit);
-        const payout = Math.round(capped - tax);
-        res.json({
-            direct_vnd: Math.round(net * 0.10),
-            bonuses_vnd: Math.round(capped - net * 0.10),
-            cap_applied: capped === net * 0.22,
-            total_vnd: payout,
-            tax_vnd: tax
-        });
-    }
-    catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-exports.affiliateSettle = functions.https.onRequest(async (req, res) => {
-    const idemKey = req.headers["idempotency-key"];
-    if (!idemKey) {
-        res.status(400).send("Missing Idempotency-Key");
-        return;
-    }
-    const idemRef = db.collection("idempotency_keys").doc(String(idemKey));
-    const idemSnap = await idemRef.get();
-    if (idemSnap.exists) {
-        res.status(200).json({ status: "duplicate" });
-        return;
-    }
-    await idemRef.set({
-        at: admin.firestore.FieldValue.serverTimestamp(),
-        ttl: Date.now() + 24 * 3600 * 1000
-    });
-    const { sale_id, commission } = req.body || {};
-    const doc = await db.collection("commissions").add({
-        sale_id, commission, status: "settled",
-        ts: admin.firestore.FieldValue.serverTimestamp()
-    });
-    res.json({ commission_id: doc.id, manifest_root: "sha256:placeholder", status: "ok" });
-});
-exports.adSubmit = functions.https.onRequest(async (req, res) => {
-    const { ad_id, claim_type, evidence_links } = req.body || {};
-    const forbidden = ["chữa khỏi", "đảm bảo", "thần dược"];
-    const violation = forbidden.find(w => (claim_type || "").includes(w));
-    if (violation) {
-        res.status(400).json({ verdict: "deny", reason: violation });
-        return;
-    }
-    const ref = await db.collection("ad_reviews").add({
-        ad_id, claim_type, evidence_links, verdict: "approved",
-        ts: admin.firestore.FieldValue.serverTimestamp()
-    });
-    res.json({ review_id: ref.id, verdict: "approved" });
-});
-exports.evidenceAnchor = functions.https.onRequest(async (req, res) => {
-    const { dataset_digest } = req.body || {};
-    const id = await db.collection("evidence").add({
-        type: "anchor", dataset_digest,
-        ts: admin.firestore.FieldValue.serverTimestamp()
-    });
-    res.json({ anchor_id: id.id, status: "anchored" });
-});
-exports.evidenceVerify = functions.https.onRequest(async (req, res) => {
-    const { root } = req.query;
-    const snap = await db.collection("evidence").where("dataset_digest", "==", root).get();
-    if (snap.empty) {
-        res.status(404).json({ verified: false });
-        return;
-    }
-    res.json({ verified: true, count: snap.size });
-});
+// Onboarding
+exports.onboardingStep = (0, onboardingStep_1.onboardingStep)(db);
+// Affiliate
+exports.affiliateQuote = affiliateQuote_1.affiliateQuote;
+exports.affiliateSettle = affiliateSettle_1.affiliateSettle;
+// Ads & Compliance
+exports.adSubmit = adSubmit_1.adSubmit;
+exports.adStatus = adStatus_1.adStatus;
+// Channel
+exports.channelGuard = channelGuard_1.channelGuard;
+exports.channelAutoAttr = channelAutoAttr_1.channelAutoAttr;
+// Evidence & Ledger
+exports.publishEvidenceLedger = publishEvidenceLedger_1.publishEvidenceLedger;
+exports.evidenceVerify = evidenceVerify_1.evidenceVerify;
+exports.evidenceBadge = evidenceBadge_1.evidenceBadge;
+exports.evidenceList = evidenceList_1.evidenceList;
+// Partners
+exports.partnersList = partnersList_1.partnersList;
+exports.partnersUpdate = partnersUpdate_1.partnersUpdate;
+// Metrics & SLA
+exports.metricsCollector = metricsCollector_1.metricsCollector;
+exports.metricsSummary = metricsSummary_1.metricsSummary;
+// Transparency
+exports.transparencyFeed = transparencyFeed_1.transparencyFeed;
+exports.partnerDigest = partnerDigest_1.partnerDigest;
+// Realtime
+exports.onEvidenceWrite = onEvidenceWrite_1.onEvidenceWrite;
+exports.onMetricsWrite = onMetricsWrite_1.onMetricsWrite;
+// Analytics & Fairness
+exports.analyticsFairness = analyticsFairness_1.analyticsFairness;
+exports.auditEvidence = auditEvidence_1.auditEvidence;
+exports.predictFairness = predictFairness_1.predictFairness;
+// Forecast Signing & Verification
+exports.signForecast = signForecast_1.signForecast;
+exports.forecastManifestPublic = forecastManifestPublic_1.forecastManifestPublic;
+exports.forecastVerify = forecastVerify_1.forecastVerify;
+exports.forecastBadge = forecastBadge_1.forecastBadge;
 //# sourceMappingURL=index.js.map
