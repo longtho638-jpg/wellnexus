@@ -1,0 +1,1 @@
+{"version":3,"file":"step.js","sourceRoot":"","sources":["../../src/onboarding/step.ts"],"names":[],"mappings":";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;AAAA,8DAAgD;AAEnC,QAAA,cAAc,GAAG,SAAS,CAAC,MAAM,CAAC,iBAAiB,CAAC,CAAC,KAAK,CAAC,SAAS,CAAC,CAAC,OAAO,EAAE,QAAQ,EAAE,EAAE;IACtG,QAAQ,CAAC,IAAI,CAAC;QACZ,UAAU,EAAE,uBAAuB;KACpC,CAAC,CAAC;AACL,CAAC,CAAC,CAAC"}
