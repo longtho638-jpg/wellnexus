@@ -1,0 +1,64 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-a1b2-c3d4-e5f6a1b2c3d4",
+		"name": "WellNexus Smoke Tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Affiliate Quote",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"Response body is a valid JSON\", function () {",
+							"    pm.response.to.be.json;",
+							"});",
+							"pm.test(\"Response body contains required fields\", function () {",
+							"    const jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('direct_vnd');",
+							"    pm.expect(jsonData).to.have.property('bonuses_vnd');",
+							"    pm.expect(jsonData).to.have.property('total_vnd');",
+							"    pm.expect(jsonData).to.have.property('tax_vnd');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"cart_total_vnd\": 1000000,\n    \"rank\": \"DaiSu_Silver\"\n}"
+				},
+				"url": {
+					"raw": "https://wellnexus-87243274-b52ca.web.app/api/affiliate/quote",
+					"protocol": "https",
+					"host": [
+						"wellnexus-87243274-b52ca",
+						"web",
+						"app"
+					],
+					"path": [
+						"api",
+						"affiliate",
+						"quote"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

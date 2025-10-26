@@ -1,0 +1,12 @@
+{
+  "name": "WellNexus • SEED Dashboard",
+  "short_name": "SeedDash",
+  "start_url": "seed-dashboard.html",
+  "display": "standalone",
+  "background_color": "#0b1020",
+  "theme_color": "#1775db",
+  "lang": "vi",
+  "icons": [
+    { "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'><rect width='128' height='128' rx='24' fill='%231775db'/><text x='50%' y='57%' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='60' fill='white'>WN</text></svg>", "sizes": "128x128", "type": "image/svg+xml" }
+  ]
+}

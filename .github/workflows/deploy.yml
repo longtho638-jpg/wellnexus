@@ -1,0 +1,37 @@
+name: 🚀 Deploy WellNexus (Staging + Prod 2-Eyes)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  use-common:
+    uses: ./.github/workflows/workflow-common.reuseable.yml
+    with:
+      environment: staging
+    secrets: inherit
+
+  deploy:
+    needs: use-common
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 🚀 Deploy lên ${{ inputs.environment }}
+        run: |
+          npm install -g firebase-tools
+          firebase use $PROJECT_ID
+          firebase deploy --only functions,hosting,firestore:rules,firestore:indexes --project=$PROJECT_ID
+
+      - name: ✅ Smoke test affiliateQuote
+        run: |
+          curl -X POST https://$PROJECT_ID.web.app/api/affiliate/quote \
+          -H "Content-Type: application/json" \
+          -d '{"cart_total_vnd":1000000,"rank":"KhoiNghiep"}' || exit 1
+
+      - name: 📣 Slack notify
+        if: success()
+        run: |
+          MSG="✅ *Staging deploy thành công!* (<https://$PROJECT_ID.web.app|Mở site>)"
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"$MSG\"}" ${{ secrets.SLACK_WEBHOOK_URL }}

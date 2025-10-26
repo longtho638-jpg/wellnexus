@@ -1,0 +1,84 @@
+name: 🧩 WellNexus CI/CD Common (Reusable Workflow)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Target environment (staging/prod)"
+        required: true
+        type: string
+    secrets:
+      FIREBASE_SERVICE_ACCOUNT:
+        required: true
+      SLACK_WEBHOOK_URL:
+        required: true
+      GITHUB_TOKEN:
+        required: true
+
+env:
+  PROJECT_ID: wellnexus-87243274
+  REGION: asia-southeast1
+  FIREBASE_CLI_EXPERIMENTS: webframeworks
+  STAGING_CHANNEL: staging
+  PROD_CHANNEL: prod
+  APPROVERS: "ops-leads@company.com,audit@company.com"
+  NODE_VERSION: 20
+
+jobs:
+  setup:
+    name: 🏗️ Setup Node & Firebase Auth
+    runs-on: ubuntu-latest
+    outputs:
+      node_version: ${{ steps.node.outputs.node_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🧩 Setup Node.js
+        id: node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 🔑 Firebase Auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: ⚙️ Install Firebase CLI
+        run: npm install -g firebase-tools
+
+  manual-approval:
+    name: 👀 Two-Eyes Approval (Prod only)
+    if: ${{ inputs.environment == 'prod' }}
+    runs-on: ubuntu-latest
+    outputs:
+      approved: ${{ steps.gate.outputs.approved }}
+    steps:
+      - name: ✋ Approval Required
+        id: gate
+        uses: trstringer/manual-approval@v1
+        with:
+          approvers: ${{ env.APPROVERS }}
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          minimum-approvals: 2
+          timeout-minutes: 30
+
+  slack-notify:
+    name: 📣 Slack Notify (Any Status)
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: 📡 Send Slack Message
+        run: |
+          STATUS=${{ job.status }}
+          if [ "$STATUS" == "success" ]; then
+            EMOJI="✅"
+          elif [ "$STATUS" == "failure" ]; then
+            EMOJI="❌"
+          else
+            EMOJI="⚠️"
+          fi
+          MSG="${EMOJI} *Workflow:* ${{ github.workflow }}\nEnv: ${{ inputs.environment }}\nStatus: $STATUS\nRun: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|Chi tiết>"
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"$MSG\"}" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}

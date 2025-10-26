@@ -1,0 +1,98 @@
+name: Preview & Lighthouse CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write   # để comment link preview
+
+concurrency:
+  group: preview-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PROJECT_ID: wellnexus-87243274-b52ca      # 🔁 Đã cập nhật Project ID
+  FIREBASE_CLI_VERSION: 13.16.0         # có thể điều chỉnh phiên bản CLI
+
+jobs:
+  build-deploy:
+    name: Build & Deploy Preview
+    runs-on: ubuntu-latest
+    outputs:
+      preview_url: ${{ steps.deploy.outputs.preview_url }}
+      channel_id:  ${{ steps.deploy.outputs.channel_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install deps
+        run: npm --prefix functions ci
+
+      - name: Build
+        run: npm --prefix functions run build --if-present
+
+      - name: Install Firebase CLI
+        run: npm i -g firebase-tools@${{ env.FIREBASE_CLI_VERSION }}
+
+      - name: Auth Firebase via Service Account
+        id: auth
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$FIREBASE_SERVICE_ACCOUNT" > $RUNNER_TEMP/gcp-sa.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/gcp-sa.json" >> $GITHUB_ENV
+
+      - name: Deploy to Preview Channel
+        id: deploy
+        env:
+          PROJECT_ID: ${{ env.PROJECT_ID }}
+        run: |
+          CHANNEL="pr-${{ github.event.number }}-${{ github.sha }}"
+          # TTL 7 ngày để tự động dọn dẹp
+          OUT=$(firebase hosting:channel:deploy "$CHANNEL" --project "$PROJECT_ID" --expires 7d --json)
+          echo "$OUT" > deploy.json
+          # Lấy URL & channelId từ JSON
+          URL=$(jq -r '(.result."wellnexus-87243274-b52ca".url) // empty' deploy.json)
+          CHID=$(jq -r '(.result."wellnexus-87243274-b52ca".channelId) // empty' deploy.json)
+          echo "preview_url=$URL" >> $GITHUB_OUTPUT
+          echo "channel_id=$CHID"  >> $GITHUB_OUTPUT
+          echo "Preview URL: $URL" | tee -a $GITHUB_STEP_SUMMARY
+
+      - name: Comment Preview URL to PR
+        if: ${{ steps.deploy.outputs.preview_url != '' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: preview
+          message: |
+            ✅ **Firebase Preview** đã deploy:
+            ${{ steps.deploy.outputs.preview_url }}
+
+  lighthouse:
+    name: Lighthouse CI
+    needs: build-deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (for config)
+        uses: actions/checkout@v4
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            ${{ needs.build-deploy.outputs.preview_url }}
+          configPath: ./lighthouserc.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Attach summary to PR
+        if: always()
+        run: |
+          echo "Lighthouse đã chạy trên: ${{ needs.build-deploy.outputs.preview_url }}" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Channel Guard — WellNexus</title>
+  </head>
+  <body class="bg-gray-50 flex flex-col items-center p-6 min-h-screen">
+    <div class="max-w-md w-full bg-white shadow-xl rounded-2xl p-6">
+      <h1 class="text-xl font-bold text-center text-blue-600 mb-4">
+        Channel Guard & Auto Attribution
+      </h1>
+
+      <!-- Guard Test -->
+      <form id="guardForm" class="flex flex-col gap-2 mb-4">
+        <input id="seller" placeholder="Seller ID" class="border p-2 rounded" />
+        <input id="sku" placeholder="SKU" class="border p-2 rounded" />
+        <input id="online" placeholder="Giá online" class="border p-2 rounded" />
+        <input id="npp" placeholder="Giá NPP" class="border p-2 rounded" />
+        <label><input type="checkbox" id="official" /> Official Store</label>
+        <button class="bg-blue-600 text-white py-2 rounded">Kiểm tra</button>
+      </form>
+      <div id="guardResult" class="text-sm text-gray-600"></div>
+
+      <hr class="my-4" />
+
+      <!-- Auto Attribute -->
+      <form id="attrForm" class="flex flex-col gap-2">
+        <input id="buyer" placeholder="Buyer ID" class="border p-2 rounded" />
+        <input id="sale" placeholder="Sale ID" class="border p-2 rounded" />
+        <input id="ref" placeholder="Ref code (nếu có)" class="border p-2 rounded" />
+        <button class="bg-green-600 text-white py-2 rounded">Auto-Attribute</button>
+      </form>
+      <div id="attrResult" class="text-sm text-gray-600 mt-4"></div>
+    </div>
+
+    <script>
+      const guardForm = document.getElementById("guardForm");
+      const attrForm = document.getElementById("attrForm");
+
+      guardForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const res = await fetch("/api/channel/guard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            seller_id: document.getElementById("seller").value,
+            sku: document.getElementById("sku").value,
+            online_price: Number(document.getElementById("online").value),
+            npp_price: Number(document.getElementById("npp").value),
+            is_official: document.getElementById("official").checked,
+          }),
+        });
+        const data = await res.json();
+        document.getElementById("guardResult").innerText = JSON.stringify(data, null, 2);
+      });
+
+      attrForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const res = await fetch("/api/channel/auto-attribute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            buyer_id: document.getElementById("buyer").value,
+            sale_id: document.getElementById("sale").value,
+            ref_code: document.getElementById("ref").value,
+          }),
+        });
+        const data = await res.json();
+        document.getElementById("attrResult").innerText = JSON.stringify(data, null, 2);
+      });
+    </script>
+  </body>
+</html>
