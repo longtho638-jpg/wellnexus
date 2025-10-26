@@ -1,41 +1,23 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.onboardingStep = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-const onboardingStep = (db) => functions.onRequest(async (req, res) => {
+import * as admin from "firebase-admin";
+const db = admin.firestore();
+export const _onboarding_step_ = async (req, res) => {
     try {
-        const { user_id, day, artefact } = req.body;
-        if (!user_id || !day) {
-            res.status(400).json({ error: "Missing user_id or day" });
-            return;
-        }
-        const ref = db.collection("onboarding_progress").doc(user_id);
-        await ref.set({
-            [day]: {
-                artefact,
-                ts: admin.firestore.FieldValue.serverTimestamp(),
-            },
-            last_updated: admin.firestore.FieldValue.serverTimestamp(),
-        }, { merge: true });
-        const nextCtaMap = {
-            1: { cta: "Hiểu SKU & pricing", day: 3 },
-            3: { cta: "Tạo ref code & chia sẻ", day: 7 },
-            7: { cta: "Chốt đơn đầu tiên", day: 14 },
-            14: { cta: "Tuân thủ quảng cáo", day: 21 },
-            21: { cta: "Nộp báo cáo mini", day: 30 },
-        };
-        const nextCta = nextCtaMap[day] ?? { cta: "Hoàn thành 30 ngày 🎉", day: null };
-        res.json({
-            ok: true,
-            next: nextCta,
-            message: `Đã ghi nhận ngày ${day}`,
+        const { user_id, step, artefact } = req.body;
+        // TODO: Validate request body
+        // TODO: Check if user exists and is authenticated
+        // TODO: Check if step is in order
+        // TODO: Persist onboarding_step_record
+        await db.collection("onboarding_step_records").add({
+            user_id,
+            step,
+            artefact,
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
         });
+        // TODO: Return next CTA
+        res.status(200).json({ next_cta: "Next step" });
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
+    catch (error) {
+        console.error("Error in onboarding step:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
-});
-exports.onboardingStep = onboardingStep;
-//# sourceMappingURL=onboardingStep.js.map
+};

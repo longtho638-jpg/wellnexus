@@ -1,51 +1,46 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.affiliateSettle = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-const crypto_1 = require("crypto");
-exports.affiliateSettle = functions.onRequest(async (req, res) => {
+import * as admin from "firebase-admin";
+const db = admin.firestore();
+export const _affiliate_settle_ = async (req, res) => {
     try {
-        const idempotencyKey = req.get("Idempotency-Key");
-        const twoEyesToken = req.get("X-Two-Eyes-Token");
-        const { sale_id, total_vnd, recipient_id } = req.body;
-        if (!idempotencyKey || !sale_id) {
-            res.status(400).json({ error: "Thiếu Idempotency-Key hoặc sale_id" });
-            return;
+        const { sale_id } = req.body;
+        const idempotencyKey = req.headers['idempotency-key'];
+        const twoEyesToken = req.headers['x-two-eyes-token'];
+        // 1. Idempotency Check
+        const idemRef = db.collection('idempotency_keys').doc(idempotencyKey);
+        const idemDoc = await idemRef.get();
+        if (idemDoc.exists) {
+            const data = idemDoc.data();
+            if (data) {
+                return res.status(data.statusCode).json(data.body);
+            }
         }
-        const idemRef = admin.firestore().collection("idempotency_keys").doc(idempotencyKey);
-        const existing = await idemRef.get();
-        if (existing.exists) {
-            res.status(200).json(existing.data());
-            return;
+        // 2. Two-Eyes Token Validation
+        // TODO: Replace with actual token validation
+        if (!twoEyesToken || !twoEyesToken.startsWith("ok-")) {
+            return res.status(401).json({ error: "Unauthorized: Invalid X-Two-Eyes-Token" });
         }
-        // Two-eyes guard
-        const isTwoEyes = twoEyesToken && twoEyesToken.startsWith("OK-");
-        if (!isTwoEyes) {
-            res.status(403).json({ error: "Cần 2-eyes approval trước khi settle" });
-            return;
-        }
-        const commission_id = (0, crypto_1.randomUUID)();
-        const doc = {
-            commission_id,
+        // 3. TODO: Sale validation
+        // 4. TODO: Commission calculation
+        const commission_id = "commission_id";
+        const manifest_root = "manifest_root";
+        // 5. Persist commission and idempotency key
+        const commissionData = {
             sale_id,
-            recipient_id,
-            amount: total_vnd,
-            pct: 0.1,
-            status: "settled",
-            ts: admin.firestore.FieldValue.serverTimestamp(),
-        };
-        await admin.firestore().collection("commissions").doc(commission_id).set(doc);
-        await idemRef.set({ ok: true, commission_id, ts: Date.now() });
-        res.json({
             commission_id,
-            manifest_root: `hash:${commission_id}`,
-            status: "settled",
-        });
+            manifest_root,
+            status: "PENDING",
+            createdAt: admin.firestore.FieldValue.serverTimestamp()
+        };
+        await db.collection('commissions').add(commissionData);
+        const idemData = {
+            statusCode: 201,
+            body: { commission_id, manifest_root, status: "PENDING" }
+        };
+        await idemRef.set(idemData);
+        res.status(201).json(idemData.body);
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
+    catch (error) {
+        console.error("Error in affiliate settle:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
-});
-//# sourceMappingURL=affiliateSettle.js.map
+};

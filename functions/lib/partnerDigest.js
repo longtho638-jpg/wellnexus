@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.partnerDigest = void 0;
-const scheduler_1 = require("firebase-functions/v2/scheduler");
-const admin = require("firebase-admin");
-const nodemailer = require("nodemailer");
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import * as admin from "firebase-admin";
+import * as nodemailer from "nodemailer";
 // NOTE: Nodemailer setup requires valid SMTP credentials in environment variables.
 // For this example, it will not send emails without SMTP_USER and SMTP_PASS.
 const transporter = nodemailer.createTransport({
@@ -13,7 +10,7 @@ const transporter = nodemailer.createTransport({
         pass: process.env.SMTP_PASS,
     },
 });
-exports.partnerDigest = (0, scheduler_1.onSchedule)({ schedule: "every sunday 09:00", region: "asia-southeast1", timeoutSeconds: 300 }, async () => {
+export const partnerDigest = onSchedule({ schedule: "every sunday 09:00", region: "asia-southeast1", timeoutSeconds: 300 }, async () => {
     const db = admin.firestore();
     const partnersSnap = await db.collection("partners").where("status", "==", "approved").get();
     if (partnersSnap.empty) {
@@ -57,4 +54,3 @@ exports.partnerDigest = (0, scheduler_1.onSchedule)({ schedule: "every sunday 09
     }
     console.log(`Digest process completed for ${partnersSnap.size} partners.`);
 });
-//# sourceMappingURL=partnerDigest.js.map

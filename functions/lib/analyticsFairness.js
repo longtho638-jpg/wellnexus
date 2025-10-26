@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.analyticsFairness = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-exports.analyticsFairness = functions.onRequest(async (_req, res) => {
+import * as functions from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+export const analyticsFairness = functions.onRequest(async (_req, res) => {
     try {
         const db = admin.firestore();
         // Load data from 3 main collections
@@ -48,4 +45,3 @@ exports.analyticsFairness = functions.onRequest(async (_req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-//# sourceMappingURL=analyticsFairness.js.map

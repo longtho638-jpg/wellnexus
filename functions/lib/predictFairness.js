@@ -1,10 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.predictFairness = void 0;
-const scheduler_1 = require("firebase-functions/v2/scheduler");
-const admin = require("firebase-admin");
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import * as admin from "firebase-admin";
 // A simplified ML model simulation: forecast biasRisk based on 7-30 day trends
-exports.predictFairness = (0, scheduler_1.onSchedule)({ schedule: "0 3 * * *", region: "asia-southeast1", timeoutSeconds: 300 }, async () => {
+export const predictFairness = onSchedule({ schedule: "0 3 * * *", region: "asia-southeast1", timeoutSeconds: 300 }, async () => {
     const db = admin.firestore();
     const metricsSnap = await db.collection("metrics_daily").orderBy("ts", "desc").limit(90).get();
     if (metricsSnap.empty) {
@@ -42,4 +39,3 @@ exports.predictFairness = (0, scheduler_1.onSchedule)({ schedule: "0 3 * * *", r
     });
     console.log(`Predictive fairness forecast saved for ${forecast.length} partners.`);
 });
-//# sourceMappingURL=predictFairness.js.map

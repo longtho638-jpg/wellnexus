@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.channelGuard = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-exports.channelGuard = functions.onRequest(async (req, res) => {
+import * as functions from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+export const channelGuard = functions.onRequest(async (req, res) => {
     try {
         const { seller_id, sku, online_price, npp_price, is_official } = req.body;
         if (!seller_id || !sku) {
@@ -34,4 +31,3 @@ exports.channelGuard = functions.onRequest(async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-//# sourceMappingURL=channelGuard.js.map

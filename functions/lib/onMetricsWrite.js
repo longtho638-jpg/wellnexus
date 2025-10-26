@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.onMetricsWrite = void 0;
-const functions = require("firebase-functions/v2/firestore");
-const admin = require("firebase-admin");
-exports.onMetricsWrite = functions.onDocumentWritten("metrics_daily/{docId}", async (event) => {
+import * as functions from "firebase-functions/v2/firestore";
+import * as admin from "firebase-admin";
+export const onMetricsWrite = functions.onDocumentWritten("metrics_daily/{docId}", async (event) => {
     const after = event.data?.after?.data();
     if (!after) {
         console.log("No data after write on metrics_daily/{docId}. Exiting.");
@@ -24,4 +21,3 @@ exports.onMetricsWrite = functions.onDocumentWritten("metrics_daily/{docId}", as
         console.error("Failed to push to Realtime Database:", error);
     }
 });
-//# sourceMappingURL=onMetricsWrite.js.map

@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.transparencyFeed = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-exports.transparencyFeed = functions.onRequest(async (_req, res) => {
+import * as functions from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+export const transparencyFeed = functions.onRequest(async (_req, res) => {
     try {
         const db = admin.firestore();
         const [evSnap, metSnap, partSnap] = await Promise.all([
@@ -38,4 +35,3 @@ exports.transparencyFeed = functions.onRequest(async (_req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-//# sourceMappingURL=transparencyFeed.js.map

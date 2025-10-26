@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.metricsSummary = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-exports.metricsSummary = functions.onRequest(async (_req, res) => {
+import * as functions from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+export const metricsSummary = functions.onRequest(async (_req, res) => {
     try {
         const db = admin.firestore();
         const snap = await db.collection("metrics_daily").orderBy("ts", "desc").limit(30).get();
@@ -28,4 +25,3 @@ exports.metricsSummary = functions.onRequest(async (_req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-//# sourceMappingURL=metricsSummary.js.map

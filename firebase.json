@@ -7,8 +7,20 @@
     "public": "public",
     "rewrites": [
       {
-        "source": "/api/**",
-        "function": "api"
+        "source": "/api/onboarding/**",
+        "function": "onboarding"
+      },
+      {
+        "source": "/api/affiliate/**",
+        "function": "affiliate"
+      },
+      {
+        "source": "/api/ad/**",
+        "function": "ad"
+      },
+      {
+        "source": "/api/evidence/**",
+        "function": "evidence"
       }
     ]
   }

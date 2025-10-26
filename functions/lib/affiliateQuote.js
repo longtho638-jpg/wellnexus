@@ -1,37 +1,44 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.affiliateQuote = void 0;
-const functions = require("firebase-functions/v2/https");
-exports.affiliateQuote = functions.onRequest(async (req, res) => {
+import * as admin from "firebase-admin";
+const db = admin.firestore();
+export const _affiliate_quote_ = async (req, res) => {
     try {
-        const { cart_total_vnd, rank } = req.body;
-        if (!cart_total_vnd || !rank) {
-            res.status(400).json({ error: "Thiếu dữ liệu đầu vào" });
-            return;
+        const { cart_total_vnd, ref_code, rank } = req.body;
+        // Validation
+        if (!cart_total_vnd || cart_total_vnd <= 0) {
+            return res.status(400).json({ error: "cart_total_vnd must be a positive number" });
         }
-        // Công thức cơ bản (rút từ JSON policy)
-        const pctMap = {
-            DirectAffiliate: 0.10,
-            KhoiNghiep: 0.21,
-            DaiSu_Silver: 0.15,
-            DaiSu_Gold: 0.18,
-            DaiSu_Diamond: 0.20,
+        let direct_vnd = 0;
+        let bonuses_vnd = 0;
+        let cap_applied = false;
+        // Tiers
+        const tiers = {
+            DirectAffiliate: { payout_pct: 0.10 },
+            KhoiNghiep: { payout_pct: 0.21, criteria: { personal_revenue_min_vnd: 6000000 } }
         };
-        const pct = pctMap[rank] ?? 0.1;
-        const direct_vnd = cart_total_vnd * pct;
-        const bonuses_vnd = 0;
-        const total_vnd = Math.min(cart_total_vnd * 0.22, direct_vnd + bonuses_vnd);
-        res.json({
+        const tier = tiers[rank];
+        if (tier) {
+            // Check for KhoiNghiep bonus
+            if (rank === 'KhoiNghiep' && cart_total_vnd >= tier.criteria.personal_revenue_min_vnd) {
+                bonuses_vnd = cart_total_vnd * (tier.payout_pct - tiers.DirectAffiliate.payout_pct);
+            }
+            direct_vnd = cart_total_vnd * tiers.DirectAffiliate.payout_pct;
+        }
+        let total_vnd = direct_vnd + bonuses_vnd;
+        // Apply cap
+        const total_commission_cap_pct = 0.22;
+        if (total_vnd > cart_total_vnd * total_commission_cap_pct) {
+            total_vnd = cart_total_vnd * total_commission_cap_pct;
+            cap_applied = true;
+        }
+        res.status(200).json({
             direct_vnd,
             bonuses_vnd,
-            cap_applied: total_vnd < direct_vnd,
-            total_vnd,
-            tax_vnd: total_vnd * 0.1,
+            cap_applied,
+            total_vnd
         });
     }
-    catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
+    catch (error) {
+        console.error("Error in affiliate quote:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
-});
-//# sourceMappingURL=affiliateQuote.js.map
+};

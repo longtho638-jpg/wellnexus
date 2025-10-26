@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.onEvidenceWrite = void 0;
-const functions = require("firebase-functions/v2/firestore");
-const admin = require("firebase-admin");
-exports.onEvidenceWrite = functions.onDocumentWritten("evidence/{docId}", async (event) => {
+import * as functions from "firebase-functions/v2/firestore";
+import * as admin from "firebase-admin";
+export const onEvidenceWrite = functions.onDocumentWritten("evidence/{docId}", async (event) => {
     const after = event.data?.after?.data();
     if (!after) {
         console.log("No data after write on evidence/{docId}. Exiting.");
@@ -23,4 +20,3 @@ exports.onEvidenceWrite = functions.onDocumentWritten("evidence/{docId}", async 
         console.error("Failed to push to Realtime Database:", error);
     }
 });
-//# sourceMappingURL=onEvidenceWrite.js.map

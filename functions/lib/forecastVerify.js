@@ -1,11 +1,8 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.forecastVerify = void 0;
-const https = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-const cryptoUtils_1 = require("./cryptoUtils");
+import * as https from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+import { verifyEd25519Hex } from "./cryptoUtils";
 /** /api/forecast/verify?root=... → trả verified + manifest tóm tắt */
-exports.forecastVerify = https.onRequest(async (req, res) => {
+export const forecastVerify = https.onRequest(async (req, res) => {
     try {
         const root = String(req.query.root || "");
         if (!root) {
@@ -18,7 +15,7 @@ exports.forecastVerify = https.onRequest(async (req, res) => {
             return;
         }
         const m = snap.data();
-        const verified = (0, cryptoUtils_1.verifyEd25519Hex)(m.merkleRoot, m.signature);
+        const verified = verifyEd25519Hex(m.merkleRoot, m.signature);
         res.set("Cache-Control", "public, max-age=300");
         res.json({
             verified,
@@ -33,4 +30,3 @@ exports.forecastVerify = https.onRequest(async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
-//# sourceMappingURL=forecastVerify.js.map

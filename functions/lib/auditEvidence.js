@@ -1,10 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.auditEvidence = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-const crypto = require("crypto");
-exports.auditEvidence = functions.onRequest(async (req, res) => {
+import * as functions from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+import * as crypto from "crypto";
+export const auditEvidence = functions.onRequest(async (req, res) => {
     // IMPORTANT: In a real environment, use a secure method for admin keys.
     const key = req.headers["x-admin-key"];
     if (key !== (process.env.ADMIN_KEY || "demo")) {
@@ -52,4 +49,3 @@ exports.auditEvidence = functions.onRequest(async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-//# sourceMappingURL=auditEvidence.js.map

@@ -1,6 +1,6 @@
 # WellNexus Commerce OS: Project Sức-Khỏe & Niềm-Tin
 
-This repository contains the backend services for the WellNexus affiliate marketing platform, built on Firebase and operated by a team of specialized AI agents. Our philosophy is to create a robust Evidence Layer for the entire commerce chain, guided by the principles: "Chứng minh. Tự động hoá. Mở rộng."
+This repository contains the backend services for the WellNexus affiliate marketing platform, built on Firebase and operated by a team of specialized AI agents. Our philosophy is to create a robust Evidence Layer for the entire commerce chain, guided by the principles: "Chứng minh. Tự động hoá. M mở rộng."
 
 ## Core Architecture
 
@@ -60,6 +60,49 @@ The CI/CD pipeline is managed by GitHub Actions and automates the deployment pro
 -   **Promote to Production**: Deploys the release to production with a canary rollout and includes automated rollback protection.
 
 For more details, see the [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) file.
+
+## Function Skeletons
+
+### Idempotent API (Two-Eyes)
+
+This section contains a TypeScript skeleton for Firebase Functions (v2) using Express. It provides a foundational API structure with built-in idempotency and two-person approval workflow support.
+
+#### Endpoints
+
+-   `POST /api/affiliate/quote`
+-   `POST /api/affiliate/settle` (Requires `X-Two-Eyes-Token`)
+-   `POST /api/evidence/verify` (Requires `X-Two-Eyes-Token`)
+
+#### Setup
+
+1.  Place the skeleton file in `functions/src/index.ts`.
+2.  Install dependencies:
+    ```bash
+    cd functions
+    npm i express cors
+    npm i -D typescript @types/express @types/cors
+    ```
+3.  Create a `tsconfig.json` file in the `functions` directory with the appropriate compiler options.
+4.  Configure `firebase.json` for Hosting rewrites:
+    ```json
+    {
+      "hosting": [{
+        "source": "web",
+        "rewrites": [{ "source": "/api/**", "function": "api" }]
+      }]
+    }
+    ```
+5.  Build and deploy the function:
+    ```bash
+    npm run build
+    firebase deploy --only functions:api
+    ```
+
+#### Next Steps
+
+-   Replace the in-memory `idemCache` with a persistent solution like Firestore (with a TTL of 24-72h).
+-   Implement real validation for `mockValidateTwoEyes()` using JWTs or a database lookup.
+-   Add schema validation (e.g., Zod), rate limiting, and an audit log to the Evidence Layer.
 
 ## System Prompt & Guiding Principles
 

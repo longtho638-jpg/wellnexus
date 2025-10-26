@@ -1,10 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.channelAutoAttr = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-const crypto = require("crypto");
-exports.channelAutoAttr = functions.onRequest(async (req, res) => {
+import * as functions from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+import * as crypto from "crypto";
+export const channelAutoAttr = functions.onRequest(async (req, res) => {
     try {
         const { buyer_id, ref_code, sale_id, channel } = req.body;
         if (!buyer_id || !sale_id) {
@@ -30,4 +27,3 @@ exports.channelAutoAttr = functions.onRequest(async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-//# sourceMappingURL=channelAutoAttr.js.map

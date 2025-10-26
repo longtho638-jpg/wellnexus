@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.partnersUpdate = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-exports.partnersUpdate = functions.onRequest(async (req, res) => {
+import * as functions from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+export const partnersUpdate = functions.onRequest(async (req, res) => {
     try {
         const auth = req.get("X-Two-Eyes-Token");
         if (auth !== "OK-APPROVED") {
@@ -22,4 +19,3 @@ exports.partnersUpdate = functions.onRequest(async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-//# sourceMappingURL=partnersUpdate.js.map

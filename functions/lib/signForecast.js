@@ -1,17 +1,14 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.signForecast = void 0;
-const scheduler = require("firebase-functions/v2/scheduler");
-const admin = require("firebase-admin");
-const cryptoUtils_1 = require("./cryptoUtils");
-const merkle_1 = require("./merkle");
+import * as scheduler from "firebase-functions/v2/scheduler";
+import * as admin from "firebase-admin";
+import { sha256Hex, signEd25519Hex } from "./cryptoUtils";
+import { merkleRootHex } from "./merkle";
 /**
  * Chạy sau predictFairness (FOREST-6) ~10 phút
  * - Lấy document mới nhất từ collection `predictions`
  * - Tính Merkle root cho mảng `forecast`
  * - Ký Ed25519 và publish manifest
  */
-exports.signForecast = scheduler.onSchedule({ schedule: "10 3 * * *", timeZone: "Asia/Ho_Chi_Minh", region: "asia-southeast1" }, async () => {
+export const signForecast = scheduler.onSchedule({ schedule: "10 3 * * *", timeZone: "Asia/Ho_Chi_Minh", region: "asia-southeast1" }, async () => {
     const db = admin.firestore();
     // Lấy bản dự báo mới nhất theo docId ISO (FOREST-6 đã dùng docId = ISO time)
     const snap = await db
@@ -27,9 +24,9 @@ exports.signForecast = scheduler.onSchedule({ schedule: "10 3 * * *", timeZone: 
     const data = doc.data();
     const forecast = data.forecast || [];
     // Tạo leaves từ JSON từng phần tử forecast
-    const leaves = forecast.map((f) => (0, cryptoUtils_1.sha256Hex)(JSON.stringify(f)));
-    const root = (0, merkle_1.merkleRootHex)(leaves);
-    const signature = (0, cryptoUtils_1.signEd25519Hex)(root);
+    const leaves = forecast.map((f) => sha256Hex(JSON.stringify(f)));
+    const root = merkleRootHex(leaves);
+    const signature = signEd25519Hex(root);
     const manifest = {
         type: "forecast_manifest",
         alg: "SHA-256",
@@ -46,4 +43,3 @@ exports.signForecast = scheduler.onSchedule({ schedule: "10 3 * * *", timeZone: 
     await db.collection("evidence_meta").doc("forecast_latest").set({ root });
     console.log("Signed forecast manifest:", manifest);
 });
-//# sourceMappingURL=signForecast.js.map

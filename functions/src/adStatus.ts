@@ -1,21 +1,12 @@
-import * as functions from "firebase-functions/v2/https";
-import * as admin from "firebase-admin";
 
-export const adStatus = functions.onRequest(async (req, res) => {
-  try {
-    const { ad_id } = req.query;
-    if (!ad_id) {
-      res.status(400).json({ error: "Thiếu ad_id" });
-      return;
+import { Request, Response } from "express";
+
+export const _ad_status_ = async (req: Request, res: Response) => {
+    try {
+        // TODO: Implement ad status logic
+        res.status(200).json({ message: "Ad status" });
+    } catch (error) {
+        console.error("Error in ad status:", error);
+        res.status(500).json({ error: "Internal Server Error" });
     }
-    const snap = await admin.firestore().collection("ad_reviews").doc(String(ad_id)).get();
-    if (!snap.exists) {
-      res.status(404).json({ error: "Không tìm thấy quảng cáo" });
-      return;
-    }
-    res.json(snap.data());
-  } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
+};

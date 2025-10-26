@@ -1,9 +1,6 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.evidenceBadge = void 0;
-const functions = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-const crypto = require("crypto");
+import * as functions from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+import * as crypto from "crypto";
 // Placeholder for fetching the correct public key
 function getPublicKey() {
     // In a real application, this would fetch the key based on `signerId`
@@ -11,7 +8,7 @@ function getPublicKey() {
     const { publicKey } = crypto.generateKeyPairSync("ed25519");
     return publicKey;
 }
-exports.evidenceBadge = functions.onRequest(async (req, res) => {
+export const evidenceBadge = functions.onRequest(async (req, res) => {
     try {
         const { root } = req.query;
         if (!root || typeof root !== 'string') {
@@ -67,4 +64,3 @@ exports.evidenceBadge = functions.onRequest(async (req, res) => {
         res.status(500).send(err.message);
     }
 });
-//# sourceMappingURL=evidenceBadge.js.map

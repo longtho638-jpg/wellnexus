@@ -1,10 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.forecastManifestPublic = void 0;
-const https = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
+import * as https from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
 /** Trả manifest forecast mới nhất tại /.well-known/forecast.json */
-exports.forecastManifestPublic = https.onRequest(async (_req, res) => {
+export const forecastManifestPublic = https.onRequest(async (_req, res) => {
     try {
         const db = admin.firestore();
         const meta = await db.collection("evidence_meta").doc("forecast_latest").get();
@@ -25,4 +22,3 @@ exports.forecastManifestPublic = https.onRequest(async (_req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
-//# sourceMappingURL=forecastManifestPublic.js.map

@@ -1,10 +1,7 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.forecastBadge = void 0;
-const https = require("firebase-functions/v2/https");
-const admin = require("firebase-admin");
-const cryptoUtils_1 = require("./cryptoUtils");
-exports.forecastBadge = https.onRequest(async (req, res) => {
+import * as https from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+import { verifyEd25519Hex } from "./cryptoUtils";
+export const forecastBadge = https.onRequest(async (req, res) => {
     try {
         const root = String(req.query.root || "");
         if (!root) {
@@ -23,7 +20,7 @@ exports.forecastBadge = https.onRequest(async (req, res) => {
             return;
         }
         const m = snap.data();
-        const ok = (0, cryptoUtils_1.verifyEd25519Hex)(m.merkleRoot, m.signature);
+        const ok = verifyEd25519Hex(m.merkleRoot, m.signature);
         const color = ok ? "#10b981" : "#f59e0b";
         const label = ok ? "Verified" : "Unverified";
         const short = m.merkleRoot.slice(0, 10);
@@ -37,4 +34,3 @@ exports.forecastBadge = https.onRequest(async (req, res) => {
         res.status(500).send(e.message);
     }
 });
-//# sourceMappingURL=forecastBadge.js.map
