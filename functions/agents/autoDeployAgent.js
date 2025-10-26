@@ -5,7 +5,7 @@ import { rollbackHosting } from "./rollbackAgent.js";
 export async function autoDeploy() {
   try {
     console.log("🚀 [Agent] Starting deploy...");
-    execSync("firebase deploy --only functions,hosting --force", { stdio: "inherit" });
+    execSync("npx firebase deploy --only functions,hosting --force", { stdio: "inherit", cwd: "/workspace" });
 
     console.log("✅ [Agent] Deploy complete. Running smoke tests...");
     const result = await runSmokeTests();
