@@ -1,27 +1,14 @@
 {
   "functions": {
     "source": "functions",
-    "runtime": "nodejs18"
+    "runtime": "nodejs20"
   },
   "hosting": {
-    "public": "public",
-    "rewrites": [
-      {
-        "source": "/api/onboarding/**",
-        "function": "onboarding"
-      },
-      {
-        "source": "/api/affiliate/**",
-        "function": "affiliate"
-      },
-      {
-        "source": "/api/ad/**",
-        "function": "ad"
-      },
-      {
-        "source": "/api/evidence/**",
-        "function": "evidence"
-      }
+    "public": "hosting",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
     ]
   }
 }
