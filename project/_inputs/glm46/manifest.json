@@ -1,6 +1,0 @@
-{
-  "source": "GLM-4.6 Scaffold",
-  "file": "gs://YOUR_BUCKET/glm46/glm46-arch.tar",
-  "sha256": "039ebb12a16a91485963a5fddfee247b7e5ee7b5ec18a311d999d42c7914b65e",
-  "notes": "Reference only. Do not deploy. Use as context for minimal diffs."
-}
