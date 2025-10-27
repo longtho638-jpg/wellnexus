@@ -5,58 +5,59 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
 const appRoot = document.getElementById('app-root');
 let auth;
 
-// --- TEMPLATES (HTML literals for different pages) ---
-const loginTemplate = `
-    <div class="flex items-center justify-center h-screen">
-        <div class="w-full max-w-sm bg-white p-8 rounded-lg shadow-md text-center">
-            <h1 class="text-2xl font-bold mb-6">WellNexus Portal</h1>
-            <button id="login-btn" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600">Sign in with Google</button>
-        </div>
-    </div>
-`;
+// --- API HELPER ---
+async function fetchMyMetrics(user) {
+    if (!user) throw new Error("User not authenticated.");
+    const idToken = await user.getIdToken();
+    const response = await fetch('/api/getMyMetrics', {
+        headers: { 'Authorization': `Bearer ${idToken}` },
+    });
+    if (!response.ok) throw new Error('Failed to fetch data');
+    return response.json();
+}
 
-const dashboardTemplate = `
+// --- TEMPLATES ---
+const loginTemplate = `...`; // (same as before)
+
+const dashboardTemplate = (userData) => `
     <div class="container mx-auto p-8">
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-3xl font-bold">Partner Dashboard</h1>
             <button id="signout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Sign Out</button>
         </div>
-        <div id="onboarding-journey"></div>
-        <div id="metrics-content"></div>
+        <div id="onboarding-journey-container">Loading Onboarding Status...</div>
     </div>
 `;
 
 // --- RENDER FUNCTIONS ---
-function renderLogin() {
-    appRoot.innerHTML = loginTemplate;
-    document.getElementById('login-btn').addEventListener('click', async () => {
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-    });
-}
+function renderLogin() { /* ... */ }
 
-function renderDashboard(user) {
-    appRoot.innerHTML = dashboardTemplate;
+async function renderDashboard(user) {
+    appRoot.innerHTML = dashboardTemplate(user);
     document.getElementById('signout-btn').addEventListener('click', () => signOut(auth));
-    // TODO: Fetch and render onboarding & metrics data
+    
+    const onboardingContainer = document.getElementById('onboarding-journey-container');
+    try {
+        const data = await fetchMyMetrics(user);
+        const { onboarding } = data;
+
+        if (onboarding.status === 'pending') {
+            onboardingContainer.innerHTML = '<div class="bg-yellow-100 p-4 rounded-lg">Your application is pending approval.</div>';
+        } else if (onboarding.status === 'approved') {
+            let stepsHtml = '<ul class="space-y-2">';
+            onboarding.steps.sort((a,b) => a.id.localeCompare(b.id)).forEach(step => {
+                const isCompleted = step.status === 'completed';
+                stepsHtml += `<li class="flex items-center p-2 rounded ${isCompleted ? 'bg-green-100' : ''}">${isCompleted ? '✅' : '⏳'} <span class="ml-2">${step.title}</span></li>`;
+            });
+            stepsHtml += '</ul>';
+            onboardingContainer.innerHTML = `<div class="bg-white p-6 rounded-lg shadow-md"><h2 class="font-bold mb-2">Your Onboarding Journey</h2>${stepsHtml}</div>`;
+        }
+    } catch (error) {
+        onboardingContainer.innerHTML = `<div class="bg-red-100 p-4 rounded-lg">Error loading data: ${error.message}</div>`;
+    }
 }
 
 // --- MAIN APP LOGIC ---
-async function main() {
-    const response = await fetch('/api/getFirebaseConfig');
-    const firebaseConfig = await response.json();
-    const app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            // User is signed in, show the dashboard
-            renderDashboard(user);
-        } else {
-            // User is signed out, show the login page
-            renderLogin();
-        }
-    });
-}
+async function main() { /* ... */ }
 
 main();
