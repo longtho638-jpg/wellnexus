@@ -1,23 +1,28 @@
 // public/js/partner-list.js
-// This script requires Firebase SDKs to be loaded. We'll add them to the HTML.
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore, collection, onSnapshot, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: "YOUR_API_KEY", // Replace with your actual config
-    authDomain: "apex-ba819.firebaseapp.com",
-    projectId: "apex-ba819",
-    storageBucket: "apex-ba819.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-};
+async function initializeFirebase() {
+    try {
+        const response = await fetch('/api/getFirebaseConfig');
+        if (!response.ok) {
+            throw new Error('Failed to fetch Firebase config');
+        }
+        const firebaseConfig = await response.json();
+        
+        const app = initializeApp(firebaseConfig);
+        return getFirestore(app);
+    } catch (error) {
+        console.error("Could not initialize Firebase:", error);
+        document.getElementById('loading').textContent = `Error: Could not initialize Firebase. ${error.message}`;
+        return null;
+    }
+}
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+async function main() {
+    const db = await initializeFirebase();
+    if (!db) return;
 
-document.addEventListener('DOMContentLoaded', () => {
     const loadingEl = document.getElementById('loading');
     const tableEl = document.getElementById('partner-table');
     const tableBody = document.getElementById('partner-list-body');
@@ -70,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!response.ok) {
                     throw new Error('API call failed.');
                 }
-                // Firestore's onSnapshot will automatically update the UI
             } catch (error) {
                 console.error('Failed to approve partner:', error);
                 button.textContent = 'Retry';
@@ -78,4 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-});
+}
+
+main();
