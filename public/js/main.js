@@ -1,55 +1,62 @@
 // public/js/main.js
 // ... (imports and top-level code remain the same)
 
-// --- API HELPERS ---
-// ... (fetchMyMetrics, completeStepAPI remain the same)
-async function generateCodeAPI(user) {
-    if (!user) throw new Error("User not authenticated.");
-    const idToken = await user.getIdToken();
-    const response = await fetch('/api/generateReferralCode', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${idToken}` },
-    });
-    if (!response.ok) throw new Error('Failed to generate code');
-    return response.json();
-}
+// --- TEMPLATES ---
+const dashboardTemplate = (userData) => `
+    <div class="container mx-auto p-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Partner Dashboard</h1>
+            <button id="signout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg">Sign Out</button>
+        </div>
+        
+        <!-- Referral Code Section - will be shown when available -->
+        <div id="ref-code-container" class="hidden mb-6 bg-blue-500 text-white p-6 rounded-lg shadow-lg"></div>
+
+        <div id="onboarding-journey-container">Loading Onboarding Status...</div>
+        <div id="metrics-content" class="mt-6"></div>
+    </div>
+`;
 
 // --- RENDER FUNCTIONS ---
-// ... (renderLogin remains the same)
-
 async function renderDashboard(user) {
-    // ... (logic to fetch data and handle pending status remains the same)
+    appRoot.innerHTML = dashboardTemplate(user);
+    document.getElementById('signout-btn').addEventListener('click', () => signOut(auth));
+    
+    const onboardingContainer = document.getElementById('onboarding-journey-container');
+    const refCodeContainer = document.getElementById('ref-code-container');
+    
+    try {
+        const data = await fetchMyMetrics(user);
+        const { onboarding, partner } = data;
 
-    if (data.onboarding.status === 'approved') {
-        let stepsHtml = '<ul class="space-y-2">';
-        data.onboarding.steps.sort((a,b) => a.id.localeCompare(b.id)).forEach(step => {
-            let stepHtml;
-            if (step.id === 'day7' && step.status === 'active') {
-                stepHtml = `<li class="flex items-center p-2 rounded bg-purple-100">...<button data-step-id="${step.id}" class="generate-code-btn ml-auto bg-purple-500 text-white px-3 py-1 rounded">Generate Code</button></li>`;
-            } else if (step.status === 'active') {
-                stepHtml = `<li class="flex items-center p-2 rounded bg-blue-100">...<button data-step-id="${step.id}" class="complete-step-btn ml-auto bg-blue-500 text-white px-3 py-1 rounded">Start</button></li>`;
-            }
-            // ... (completed and locked cases remain the same)
-            stepsHtml += stepHtml;
-        });
-        stepsHtml += '</ul>';
-        onboardingContainer.innerHTML = `...${stepsHtml}`;
+        // --- Render Referral Code ---
+        if (partner && partner.refCode) {
+            refCodeContainer.innerHTML = `
+                <h2 class="text-xl font-semibold">Your Referral Code</h2>
+                <div class="mt-2 flex items-center justify-between bg-blue-600 p-3 rounded">
+                    <span class="font-mono text-2xl">${partner.refCode}</span>
+                    <button id="copy-ref-code" class="bg-white text-blue-500 px-3 py-1 rounded">Copy</button>
+                </div>
+            `;
+            refCodeContainer.classList.remove('hidden');
+            document.getElementById('copy-ref-code').addEventListener('click', () => {
+                navigator.clipboard.writeText(partner.refCode);
+                alert('Referral code copied to clipboard!');
+            });
+        }
+
+        // --- Render Onboarding Journey ---
+        // ... (onboarding logic remains the same, but we need to hide step 7 button if code exists)
+        if (onboarding.status === 'approved') {
+            // ... inside the forEach loop for steps:
+            // if (step.id === 'day7' && partner.refCode) {
+            //    // Show 'Done' instead of 'Generate Code'
+            // }
+        }
         
-        // Add event listeners AFTER rendering for both button types
-        document.querySelectorAll('.complete-step-btn').forEach(button => {
-            button.addEventListener('click', async () => {
-                button.textContent = 'Working...';
-                await completeStepAPI(user, button.dataset.stepId);
-                renderDashboard(user); // Re-render
-            });
-        });
-        document.querySelectorAll('.generate-code-btn').forEach(button => {
-            button.addEventListener('click', async () => {
-                button.textContent = 'Generating...';
-                await generateCodeAPI(user);
-                renderDashboard(user); // Re-render
-            });
-        });
+    } catch (error) {
+        onboardingContainer.innerHTML = `<div class="bg-red-100 p-4 rounded-lg">Error: ${error.message}</div>`;
     }
 }
-// ... (main function remains the same)
+
+// ... (main function and other helpers remain the same)
