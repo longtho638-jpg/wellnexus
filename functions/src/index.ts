@@ -52,7 +52,7 @@ export const apiHandler = onRequest({ region: "asia-southeast1", cors: true }, a
             break;
 
         case 'healthCheck':
-            res.status(200).json({ status: "ok", message: "TREE Phase is LIVE on Production" });
+            res.status(200).json({ status: "ok" });
             break;
             
         default:
@@ -65,7 +65,6 @@ export const createPartnerProfile = onUserCreate({ region: "asia-southeast1" }, 
   logger.info(`New user created: ${user.uid}, creating partner profile.`);
   if (!user.email) return;
   const partnerRef = db.collection("partners").doc(user.uid);
-  // Also create onboarding steps
   const onboardingStepsCollection = partnerRef.collection("onboarding_steps");
   const batch = db.batch();
   batch.set(partnerRef, {
