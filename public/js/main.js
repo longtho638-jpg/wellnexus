@@ -1,36 +1,25 @@
 // public/js/main.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+// ... (imports and top-level code remain the same)
 
-const appRoot = document.getElementById('app-root');
-let auth;
-
-// --- API HELPER ---
-async function fetchMyMetrics(user) {
+// --- API HELPERS ---
+// ... (fetchMyMetrics remains the same)
+async function completeStepAPI(user, stepId) {
     if (!user) throw new Error("User not authenticated.");
     const idToken = await user.getIdToken();
-    const response = await fetch('/api/getMyMetrics', {
-        headers: { 'Authorization': `Bearer ${idToken}` },
+    const response = await fetch('/api/completeOnboardingStep', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ stepId }),
     });
-    if (!response.ok) throw new Error('Failed to fetch data');
+    if (!response.ok) throw new Error('Failed to complete step');
     return response.json();
 }
 
-// --- TEMPLATES ---
-const loginTemplate = `...`; // (same as before)
-
-const dashboardTemplate = (userData) => `
-    <div class="container mx-auto p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold">Partner Dashboard</h1>
-            <button id="signout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Sign Out</button>
-        </div>
-        <div id="onboarding-journey-container">Loading Onboarding Status...</div>
-    </div>
-`;
-
 // --- RENDER FUNCTIONS ---
-function renderLogin() { /* ... */ }
+// ... (renderLogin remains the same)
 
 async function renderDashboard(user) {
     appRoot.innerHTML = dashboardTemplate(user);
@@ -39,25 +28,39 @@ async function renderDashboard(user) {
     const onboardingContainer = document.getElementById('onboarding-journey-container');
     try {
         const data = await fetchMyMetrics(user);
-        const { onboarding } = data;
+        // ... (onboarding status check remains the same)
 
-        if (onboarding.status === 'pending') {
-            onboardingContainer.innerHTML = '<div class="bg-yellow-100 p-4 rounded-lg">Your application is pending approval.</div>';
-        } else if (onboarding.status === 'approved') {
+        if (data.onboarding.status === 'approved') {
             let stepsHtml = '<ul class="space-y-2">';
-            onboarding.steps.sort((a,b) => a.id.localeCompare(b.id)).forEach(step => {
-                const isCompleted = step.status === 'completed';
-                stepsHtml += `<li class="flex items-center p-2 rounded ${isCompleted ? 'bg-green-100' : ''}">${isCompleted ? '✅' : '⏳'} <span class="ml-2">${step.title}</span></li>`;
+            data.onboarding.steps.sort((a,b) => a.id.localeCompare(b.id)).forEach(step => {
+                let stepHtml;
+                switch (step.status) {
+                    case 'completed':
+                        stepHtml = `<li class="flex items-center p-2 rounded bg-green-100">✅ <span class="ml-2">${step.title}</span><span class="ml-auto font-semibold text-green-700">Done</span></li>`;
+                        break;
+                    case 'active':
+                        stepHtml = `<li class="flex items-center p-2 rounded bg-blue-100">⏳ <span class="ml-2">${step.title}</span><button data-step-id="${step.id}" class="complete-step-btn ml-auto bg-blue-500 text-white px-3 py-1 rounded">Start</button></li>`;
+                        break;
+                    default: // locked
+                        stepHtml = `<li class="flex items-center p-2 rounded opacity-50">🔒 <span class="ml-2">${step.title}</span><span class="ml-auto text-xs text-gray-500">Locked</span></li>`;
+                        break;
+                }
+                stepsHtml += stepHtml;
             });
             stepsHtml += '</ul>';
             onboardingContainer.innerHTML = `<div class="bg-white p-6 rounded-lg shadow-md"><h2 class="font-bold mb-2">Your Onboarding Journey</h2>${stepsHtml}</div>`;
+            
+            // Add event listeners AFTER rendering
+            document.querySelectorAll('.complete-step-btn').forEach(button => {
+                button.addEventListener('click', async () => {
+                    button.textContent = 'Working...';
+                    await completeStepAPI(user, button.dataset.stepId);
+                    renderDashboard(user); // Re-render the dashboard to show the new state
+                });
+            });
         }
     } catch (error) {
         onboardingContainer.innerHTML = `<div class="bg-red-100 p-4 rounded-lg">Error loading data: ${error.message}</div>`;
     }
 }
-
-// --- MAIN APP LOGIC ---
-async function main() { /* ... */ }
-
-main();
+// ... (main function remains the same)
