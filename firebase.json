@@ -2,14 +2,10 @@
   "hosting": {
     "public": "public",
     "cleanUrls": true,
-    "trailingSlash": false,
     "rewrites": [
       { "source": "/api/**", "function": "apiHandler" },
       { "source": "**", "destination": "/index.html" }
     ]
   },
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs20"
-  }
+  "functions": { "source": "functions", "runtime": "nodejs20" }
 }
