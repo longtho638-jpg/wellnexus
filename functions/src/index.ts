@@ -16,12 +16,9 @@ export const apiHandler = onRequest({ region: "asia-southeast1", cors: true }, a
     switch (path) {
         // ... (getFirebaseConfig, getMyMetrics cases remain the same)
         
-        case 'completeOnboardingStep':
+        case 'generateReferralCode':
             const idToken = req.headers.authorization?.split('Bearer ')[1];
             if (!idToken) { res.status(401).send('Unauthorized'); return; }
-
-            const { stepId } = req.body;
-            if (!stepId) { res.status(400).json({ error: "Missing stepId" }); return; }
 
             try {
                 const decodedToken = await admin.auth().verifyIdToken(idToken);
@@ -29,33 +26,41 @@ export const apiHandler = onRequest({ region: "asia-southeast1", cors: true }, a
                 const partnerRef = db.collection("partners").doc(partnerId);
 
                 await db.runTransaction(async (transaction) => {
-                    const currentStepRef = partnerRef.collection("onboarding_steps").doc(stepId);
-                    const currentStepDoc = await transaction.get(currentStepRef);
+                    const partnerDoc = await transaction.get(partnerRef);
+                    if (!partnerDoc.exists) throw new Error("Partner not found.");
+                    if (partnerDoc.data()?.refCode) throw new Error("Referral code already exists.");
 
-                    if (!currentStepDoc.exists || currentStepDoc.data()?.status !== 'active') {
-                        throw new Error("Step is not active or does not exist.");
-                    }
+                    const newRefCode = `${partnerDoc.data()?.name.split(' ')[0].toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+                    transaction.update(partnerRef, { refCode: newRefCode });
 
+                    const currentStepRef = partnerRef.collection("onboarding_steps").doc("day7");
                     transaction.update(currentStepRef, { status: "completed" });
 
-                    const currentIndex = ONBOARDING_STEPS_CONFIG.indexOf(stepId);
-                    const nextStepId = ONBOARDING_STEPS_CONFIG[currentIndex + 1];
-                    if (nextStepId) {
-                        const nextStepRef = partnerRef.collection("onboarding_steps").doc(nextStepId);
-                        transaction.update(nextStepRef, { status: "active" });
-                    }
+                    const nextStepRef = partnerRef.collection("onboarding_steps").doc("day14");
+                    transaction.update(nextStepRef, { status: "active" });
                 });
                 
-                res.status(200).json({ message: `Step ${stepId} completed.` });
+                res.status(200).json({ message: "Referral code generated." });
             } catch (error) {
-                logger.error(`Failed to complete step ${stepId}`, { error: (error as Error).message });
+                logger.error(`Failed to generate ref code`, { error: (error as Error).message });
                 res.status(500).json({ error: (error as Error).message });
             }
             break;
+        
+        // ... (completeOnboardingStep and other cases remain the same)
 
         default:
             res.status(404).send('Not Found');
     }
 });
 
-// ... (onUserCreate trigger remains the same)
+// onUserCreate trigger updated to include refCode: null
+export const createPartnerProfile = onUserCreate({ region: "asia-southeast1" }, async (user) => {
+  // ... (logic to create partner)
+  const partnerRef = db.collection("partners").doc(user.uid);
+  batch.set(partnerRef, {
+    // ... other fields
+    refCode: null, // Initialize refCode field
+  });
+  // ... (logic to create onboarding steps)
+});
