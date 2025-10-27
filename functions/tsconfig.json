@@ -1,0 +1,1 @@
+{"compilerOptions":{"module":"commonjs","outDir":"dist","strict":true,"target":"es2021"},"include":["src"]}
