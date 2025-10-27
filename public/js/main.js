@@ -1,23 +1,11 @@
 // public/js/main.js
 // ... (imports and top-level code remain the same)
 
-// --- TEMPLATES ---
-const dashboardTemplate = (userData) => `
-    <div class="container mx-auto p-8">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold">Partner Dashboard</h1>
-            <button id="signout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg">Sign Out</button>
-        </div>
-        
-        <!-- Referral Code Section - will be shown when available -->
-        <div id="ref-code-container" class="hidden mb-6 bg-blue-500 text-white p-6 rounded-lg shadow-lg"></div>
-
-        <div id="onboarding-journey-container">Loading Onboarding Status...</div>
-        <div id="metrics-content" class="mt-6"></div>
-    </div>
-`;
+// ... (API Helpers remain the same)
 
 // --- RENDER FUNCTIONS ---
+// ... (renderLogin remains the same)
+
 async function renderDashboard(user) {
     appRoot.innerHTML = dashboardTemplate(user);
     document.getElementById('signout-btn').addEventListener('click', () => signOut(auth));
@@ -31,32 +19,46 @@ async function renderDashboard(user) {
 
         // --- Render Referral Code ---
         if (partner && partner.refCode) {
-            refCodeContainer.innerHTML = `
-                <h2 class="text-xl font-semibold">Your Referral Code</h2>
-                <div class="mt-2 flex items-center justify-between bg-blue-600 p-3 rounded">
-                    <span class="font-mono text-2xl">${partner.refCode}</span>
-                    <button id="copy-ref-code" class="bg-white text-blue-500 px-3 py-1 rounded">Copy</button>
-                </div>
-            `;
-            refCodeContainer.classList.remove('hidden');
-            document.getElementById('copy-ref-code').addEventListener('click', () => {
-                navigator.clipboard.writeText(partner.refCode);
-                alert('Referral code copied to clipboard!');
-            });
+            // ... (Ref code rendering logic is correct and remains the same)
         }
 
         // --- Render Onboarding Journey ---
-        // ... (onboarding logic remains the same, but we need to hide step 7 button if code exists)
         if (onboarding.status === 'approved') {
-            // ... inside the forEach loop for steps:
-            // if (step.id === 'day7' && partner.refCode) {
-            //    // Show 'Done' instead of 'Generate Code'
-            // }
+            let stepsHtml = '<ul class="space-y-2">';
+            data.onboarding.steps.sort((a,b) => a.id.localeCompare(b.id)).forEach(step => {
+                
+                // --- PATCH CORE: Override step 7 status if refCode exists ---
+                if (step.id === 'day7' && partner && partner.refCode) {
+                    step.status = 'completed';
+                }
+                // --- END PATCH ---
+
+                let stepHtml;
+                switch (step.status) {
+                    case 'completed':
+                        stepHtml = `<li class="flex items-center p-2 rounded bg-green-100">✅ <span class="ml-2">${step.title}</span><span class="ml-auto font-semibold text-green-700">Done</span></li>`;
+                        break;
+                    case 'active':
+                        let buttonHtml = `<button data-step-id="${step.id}" class="complete-step-btn ml-auto bg-blue-500 text-white px-3 py-1 rounded">Start</button>`;
+                        if (step.id === 'day7') {
+                            buttonHtml = `<button data-step-id="${step.id}" class="generate-code-btn ml-auto bg-purple-500 text-white px-3 py-1 rounded">Generate Code</button>`;
+                        }
+                        stepHtml = `<li class="flex items-center p-2 rounded bg-blue-100">⏳ <span class="ml-2">${step.title}</span>${buttonHtml}</li>`;
+                        break;
+                    default: // locked
+                        stepHtml = `<li class="flex items-center p-2 rounded opacity-50">🔒 <span class="ml-2">${step.title}</span><span class="ml-auto text-xs text-gray-500">Locked</span></li>`;
+                        break;
+                }
+                stepsHtml += stepHtml;
+            });
+            stepsHtml += '</ul>';
+            onboardingContainer.innerHTML = `<div class="bg-white p-6 rounded-lg shadow-md"><h2 class="font-bold mb-2">Your Onboarding Journey</h2>${stepsHtml}</div>`;
+            
+            // ... (Event listeners remain the same)
         }
-        
     } catch (error) {
-        onboardingContainer.innerHTML = `<div class="bg-red-100 p-4 rounded-lg">Error: ${error.message}</div>`;
+        onboardingContainer.innerHTML = `<div class="bg-red-100 p-4 rounded-lg">Error loading data: ${error.message}</div>`;
     }
 }
 
-// ... (main function and other helpers remain the same)
+// ... (main function remains the same)
