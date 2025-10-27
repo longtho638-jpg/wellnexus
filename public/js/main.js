@@ -1,40 +1,40 @@
 // public/js/main.js
 // ... (imports and top-level code remain the same)
 
-async function renderDashboard(user) {
-    appRoot.innerHTML = dashboardTemplate(user);
-    // ... (event listeners)
-    
-    try {
-        const data = await fetchMyMetrics(user);
-        const { onboarding, partner, metrics } = data; // Now expecting 'metrics' object
+// --- API HELPERS ---
+// ... (fetchMyMetrics remains the same)
+async function logSaleAPI(user, amount) {
+    if (!user) throw new Error("User not authenticated.");
+    const idToken = await user.getIdToken();
+    const response = await fetch('/api/logSale', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount: amount, items: [{ sku: 'TEST-SKU', qty: 1 }] }),
+    });
+    if (!response.ok) throw new Error('Failed to log sale');
+    return response.json();
+}
 
-        // --- Render Metrics ---
-        if (metrics) {
-            document.getElementById('total-clicks').textContent = metrics.totalClicks.toLocaleString();
-            document.getElementById('total-sales').textContent = metrics.totalSales.toLocaleString();
-            document.getElementById('total-commission').textContent = `$${metrics.totalCommission.toFixed(2)}`;
-            
-            // --- Chart.js Integration with Real Data ---
-            const ctx = document.getElementById('metricsChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Clicks', 'Sales'],
-                    datasets: [{
-                        label: 'Your Performance',
-                        data: [metrics.totalClicks, metrics.totalSales],
-                        backgroundColor: ['rgba(59, 130, 246, 0.5)', 'rgba(16, 185, 129, 0.5)'],
-                    }]
-                }
-            });
-        }
-        
-        // --- Render Onboarding and Ref Code ---
-        // ... (existing logic for onboarding and ref code remains the same)
-        
-    } catch (error) {
-        // ... error handling
+// --- RENDER FUNCTIONS ---
+async function renderDashboard(user) {
+    // ... (logic to fetch and render metrics/onboarding remains the same)
+
+    if (data.onboarding.status === 'approved') {
+        // Add a "Log Sale" button for testing purposes
+        const metricsContainer = document.getElementById('metrics-content');
+        const testButton = document.createElement('button');
+        testButton.textContent = 'Log a Test Sale ($100)';
+        testButton.className = 'mt-4 bg-indigo-500 text-white px-4 py-2 rounded';
+        testButton.onclick = async () => {
+            testButton.textContent = 'Logging...';
+            await logSaleAPI(user, 100);
+            testButton.textContent = 'Sale Logged! Refreshing...';
+            setTimeout(() => renderDashboard(user), 1000); // Re-render to show updated metrics
+        };
+        metricsContainer.appendChild(testButton);
     }
 }
 
