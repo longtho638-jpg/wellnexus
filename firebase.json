@@ -4,13 +4,8 @@
     "cleanUrls": true,
     "trailingSlash": false,
     "rewrites": [
-      // ... (existing routes)
-      { "source": "/api/completeOnboardingStep", "function": "completeOnboardingStep" }, // Added new route
-      { "source": "/api/getMyMetrics", "function": "getMyMetrics" },
-      { "source": "/api/partner/approve", "function": "approvePartner" },
-      { "source": "/api/getFirebaseConfig", "function": "getFirebaseConfig" },
-      { "source": "/api/health", "function": "healthCheck" },
-      { "source": "**", "destination": "/index.html" }
+      { "source": "/api/generateReferralCode", "function": "generateReferralCode" }, // Added new route
+      // ... (other routes)
     ]
   },
   "functions": {
