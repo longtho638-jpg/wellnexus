@@ -7,7 +7,6 @@ import { onUserCreate } from "firebase-functions/v2/auth";
 admin.initializeApp();
 const db = admin.firestore();
 
-// This single handler routes all API requests.
 export const apiHandler = onRequest({ region: "asia-southeast1", cors: true }, async (req, res) => {
     const path = req.path.split('/').pop();
     logger.info(`API call received for: ${path}`);
@@ -53,7 +52,7 @@ export const apiHandler = onRequest({ region: "asia-southeast1", cors: true }, a
             break;
 
         case 'healthCheck':
-            res.status(200).json({ status: "ok" });
+            res.status(200).json({ status: "ok", message: "TREE Phase is LIVE on Production" });
             break;
             
         default:
@@ -63,15 +62,23 @@ export const apiHandler = onRequest({ region: "asia-southeast1", cors: true }, a
 
 // Auth Trigger to automatically create partner profiles
 export const createPartnerProfile = onUserCreate({ region: "asia-southeast1" }, async (user) => {
-  // ... (implementation from previous successful step)
   logger.info(`New user created: ${user.uid}, creating partner profile.`);
   if (!user.email) return;
   const partnerRef = db.collection("partners").doc(user.uid);
-  await partnerRef.set({
+  // Also create onboarding steps
+  const onboardingStepsCollection = partnerRef.collection("onboarding_steps");
+  const batch = db.batch();
+  batch.set(partnerRef, {
     email: user.email,
     name: user.displayName || "New Partner",
     status: "pending",
     joined_at: admin.firestore.FieldValue.serverTimestamp(),
     auth_uid: user.uid,
   });
+  const ONBOARDING_STEPS = ['day1', 'day3', 'day7', 'day14', 'day21', 'day30'];
+  ONBOARDING_STEPS.forEach((stepId, index) => {
+    const stepRef = onboardingStepsCollection.doc(stepId);
+    batch.set(stepRef, { title: `Step ${index + 1}`, status: index === 0 ? 'active' : 'locked' });
+  });
+  await batch.commit();
 });
