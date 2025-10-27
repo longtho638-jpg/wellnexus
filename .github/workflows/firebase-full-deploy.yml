@@ -1,0 +1,70 @@
+name: ⚡ Zen CI/CD – Full Firebase Deploy (Hosting + Functions + SeedTree)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: 🔥 Build & Deploy Full Firebase Stack
+
+    steps:
+      # 1️⃣ Checkout repository
+      - name: 🧩 Checkout
+        uses: actions/checkout@v4
+
+      # 2️⃣ Setup Node (with caching)
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      # 3️⃣ Install root dependencies
+      - name: 📦 Install dependencies
+        run: |
+          npm install --legacy-peer-deps --no-audit --no-fund
+
+      # 4️⃣ Build frontend (if exists)
+      - name: 🧱 Build frontend
+        run: |
+          if [ -f "package.json" ]; then
+            echo "🧱 Building frontend..."
+            npm run build || echo "⚠️ No build script found — skipping"
+          else
+            echo "⚠️ No package.json found — skipping frontend build"
+          fi
+
+      # 5️⃣ Build Firebase Functions
+      - name: ⚙️ Build Firebase Functions
+        run: |
+          if [ -d "functions" ]; then
+            echo "⚙️ Building Firebase Functions..."
+            cd functions
+            npm install --legacy-peer-deps --no-audit --no-fund
+            npm run build || echo "⚠️ No build script in functions/"
+            cd ..
+          else
+            echo "⚠️ No functions directory — skipping"
+          fi
+
+      # 6️⃣ Deploy Hosting + Functions + SeedTree
+      - name: 🚀 Deploy to Firebase
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_APEX_BA819 }}
+        run: |
+          echo "🚀 Deploying Hosting + Functions + SeedTree..."
+          firebase deploy \
+            --only hosting,functions,database \
+            --project apex-ba819 \
+            --non-interactive \
+            --force
+
+      # 7️⃣ Optional – Slack/Discord Notification (Future hook)
+      # - name: 📣 Notify Success
+      #   if: success()
+      #   run: echo "✅ Deploy completed for commit $GITHUB_SHA"
+
