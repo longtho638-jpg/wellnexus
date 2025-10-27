@@ -23,7 +23,7 @@ export const apiHandler = onRequest({ region: "asia-southeast1", cors: true }, a
                 const { amount, items } = req.body;
                 if (!amount || !items) { res.status(400).json({ error: "Missing amount or items" }); return; }
 
-                // 1. Log the sale in the 'sales' collection
+                // 1. Log the sale
                 const saleRef = await db.collection('sales').add({
                     seller_id: partnerId,
                     amount: amount,
@@ -31,7 +31,7 @@ export const apiHandler = onRequest({ region: "asia-southeast1", cors: true }, a
                     createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 });
 
-                // 2. Update the daily metrics for the partner in a transaction
+                // 2. Update daily metrics transactionally
                 const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
                 const metricsRef = db.collection('metrics_daily').doc(`${partnerId}_${today}`);
 
