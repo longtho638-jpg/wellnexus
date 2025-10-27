@@ -2,6 +2,55 @@ name: ⚡ Zen CI/CD – Full Firebase Deploy (Hosting + Functions + SeedTree)
 
 on:
   push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧩 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔧 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: 📦 Install dependencies
+        working-directory: functions
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+
+      - name: 🧱 Build TypeScript
+        working-directory: functions
+        run: npm run build
+
+      - name: ⚙️ Verify Firebase config
+        working-directory: functions
+        run: |
+          echo "Checking Firebase configuration..."
+          if [ ! -f ../firebase.json ]; then
+            echo "❌ Missing firebase.json at repo root"
+            exit 1
+          fi
+
+      - name: 🚀 Deploy to Firebase
+        working-directory: functions
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: firebase deploy --only hosting,functions --token "$FIREBASE_TOKEN"
+
+      - name: ✅ Done
+        run: echo "🎉 Deployment finished successfully!"
+
+name: ⚡ Zen CI/CD – Full Firebase Deploy (Hosting + Functions + SeedTree)
+
+on:
+  push:
     branches: [main]
   pull_request:
     branches: [main]
