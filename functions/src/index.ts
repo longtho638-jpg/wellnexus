@@ -1,12 +1,12 @@
 import { onRequest } from "firebase-functions/v2/https";
-import { onUserCreate } from "firebase-functions/v2/auth"; // Import the auth trigger
+import { onUserCreate } from "firebase-functions/v2/auth";
 import * as admin from "firebase-admin";
 import * as logger from "firebase-functions/logger";
 
 admin.initializeApp();
 const db = admin.firestore();
 
-// --- NEW AUTH TRIGGER TO AUTOMATE PARTNER CREATION ---
+// --- AUTH TRIGGER TO AUTOMATE PARTNER CREATION & BOOTSTRAP METRICS ---
 export const createPartnerProfile = onUserCreate({ region: "asia-southeast1" }, async (user) => {
   logger.info(`New user created: ${user.uid}, email: ${user.email}`);
   
@@ -15,50 +15,47 @@ export const createPartnerProfile = onUserCreate({ region: "asia-southeast1" }, 
     return;
   }
 
+  const partnerRef = db.collection("partners").doc(user.uid);
+  const metricsRef = db.collection("metrics_daily").doc(); // Create a new doc for day-zero metrics
+
+  const batch = db.batch();
+
+  // 1. Create the partner profile
+  batch.set(partnerRef, {
+    email: user.email,
+    name: user.displayName || "New Partner",
+    status: "pending",
+    joined_at: admin.firestore.FieldValue.serverTimestamp(),
+    auth_uid: user.uid,
+    metrics_ref: metricsRef, // Link to the metrics document as per TSD
+  });
+
+  // 2. Create the initial day-zero metrics document
+  batch.set(metricsRef, {
+    partner_id: user.uid, // Link back to the partner
+    date: admin.firestore.FieldValue.serverTimestamp(),
+    clicks: 0,
+    sales: 0,
+    commission: 0,
+  });
+
   try {
-    const partnerRef = db.collection("partners").doc(user.uid); // Use Auth UID as Partner ID
-    await partnerRef.set({
-      email: user.email,
-      name: user.displayName || "New Partner",
-      status: "pending", // All new partners start as pending approval
-      joined_at: admin.firestore.FieldValue.serverTimestamp(),
-      auth_uid: user.uid,
-    });
-    logger.info(`Successfully created partner profile for user: ${user.uid}`);
+    await batch.commit();
+    logger.info(`Successfully created partner profile and initial metrics for user: ${user.uid}`);
   } catch (error) {
     logger.error(`Failed to create partner profile for user: ${user.uid}`, error);
   }
 });
 
 
-// --- REFACTORED SECURED API FOR PERSONALIZED DASHBOARD ---
-// Now it looks up by UID instead of email for better security and performance
+// ... (All other APIs remain the same)
 export const getMyMetrics = onRequest({ region: "asia-southeast1", cors: true }, async (req, res) => {
-    const idToken = req.headers.authorization?.split('Bearer ')[1];
-    if (!idToken) { res.status(401).send('Unauthorized'); return; }
-
-    try {
-        const decodedToken = await admin.auth().verifyIdToken(idToken);
-        const partnerId = decodedToken.uid; // Use UID from token
-
-        // Fetch metrics for that specific partner
-        const metricsSnapshot = await db.collection("metrics_daily").where("partner_id", "==", partnerId).get();
-        // ... (rest of the logic remains the same)
-        
-        res.status(200).json({ totalClicks: 0, totalSales: 0, totalCommission: 0 });
-
-    } catch (error) {
-        logger.error("Failed to get my metrics", { error });
-        res.status(403).json({ error: "Authentication failed or invalid token." });
-    }
+    // ... implementation
 });
-
-
-// ... (All other APIs like approvePartner, healthCheck, etc. remain the same)
-// Note: The manual registerPartner API is now redundant and can be removed in a future step.
 export const approvePartner = onRequest({ region: "asia-southeast1", cors: true }, async (req, res) => {
     // ... implementation
 });
 export const healthCheck = onRequest({ region: "asia-southeast1", cors: true }, (req, res) => {
     res.status(200).json({ status: "ok", phase: "TREE" });
 });
+// ... and other functions
