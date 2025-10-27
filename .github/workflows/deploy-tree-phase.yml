@@ -1,0 +1,42 @@
+# .github/workflows/deploy-tree-phase.yml
+name: 🚀 Deploy TREE to Firebase
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    name: Build & Deploy TREE Phase
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: apex-ba819
+
+    steps:
+      - name: 🧱 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Install & Build Functions
+        working-directory: ./functions
+        run: |
+          npm ci
+          npm run build
+      
+      # NOTE: Frontend build step is omitted as we are focusing on the backend first.
+      # A static placeholder will be deployed.
+
+      - name: 🚀 Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_APEX_BA819 }}'
+          projectId: ${{ env.PROJECT_ID }}
+          channelId: live
+          args: --only functions,firestore,hosting

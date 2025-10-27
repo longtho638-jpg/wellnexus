@@ -1,41 +1,86 @@
-name: 🚀 Firebase Deploy
+# .github/workflows/firebase-deploy.yml
+name: 🚀 Deploy TREE to Firebase (v2)
 
 on:
   push:
     branches:
       - main
-      - glm46-patch-core # Added for immediate testing
+      - glm46-patch-core
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  deploy:
+  build_and_deploy:
+    name: Build & Deploy to Production
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/glm46-patch-core'
     runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: apex-ba819
+
     steps:
-      - uses: actions/checkout@v4
+      - name: 🧱 Checkout repository
+        uses: actions/checkout@v4
 
       - name: ⚙️ Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20.19.0
+          node-version: '20.19.0'
 
-      - name: 📦 Install Root Dependencies
-        run: npm ci
-
-      - name: 🧱 Build Frontend
+      - name: 📦 Install & Build Functions
+        working-directory: ./functions
         run: |
-          cd frontend
           npm ci
           npm run build
-          cd ..
       
-      - name: 📦 Install Functions Dependencies
-        working-directory: ./functions
-        run: npm ci
+      # Frontend build is not needed for this phase as we are backend-focused
 
-      - name: 🔐 Deploy to Firebase
-        uses: w9jds/firebase-action@v13.6.1
+      - name: 🚀 Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
         with:
-          args: deploy --only hosting,functions --force --non-interactive
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-          PROJECT_ID: apex-ba819
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_APEX_BA819 }}'
+          channelId: live
+          projectId: ${{ env.PROJECT_ID }}
+          target: wellnexus-tree # Optional: can define deploy targets in firebase.json
+          args: --only functions,firestore
+
+  build_and_preview:
+    name: Build & Preview on PR
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: apex-ba819
+
+    steps:
+      - name: 🧱 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.19.0'
+      
+      - name: 📦 Install & Build Functions
+        working-directory: ./functions
+        run: |
+          npm ci
+          npm run build
+
+      - name: 🚀 Deploy to Preview Channel
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_APEX_BA819 }}'
+          projectId: ${{ env.PROJECT_ID }}
+          expires: 30d # Preview expires in 30 days
+          args: --only functions,firestore
+
+      - name:  Lighthouse Check
+        uses: treosh/lighthouse-ci-action@v11
+        with:
+          urls: '${{ steps.deploy.outputs.details_url }}'
+          budgetPath: './lighthouse_budget.json' # Optional: Define performance budget
+          uploadArtifacts: true
+          temporaryPublicStorage: true
