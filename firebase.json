@@ -7,7 +7,9 @@
       { "source": "/api/partner/register", "function": "registerPartner" },
       { "source": "/api/partner/metrics", "function": "getPartnerMetrics" },
       { "source": "/api/metrics/summary", "function": "getMetricsSummary" },
-      { "source": "/api/health", "function": "healthCheck" }
+      { "source": "/api/partner/approve", "function": "approvePartner" }, // Added new route
+      { "source": "/api/health", "function": "healthCheck" },
+      { "source": "**", "destination": "/index.html" }
     ]
   },
   "functions": {
