@@ -5,10 +5,8 @@
     "trailingSlash": false,
     "rewrites": [
       // ... (existing routes)
-      { "source": "/api/getMyMetrics", "function": "getMyMetrics" }, // Added new secured route
-      { "source": "/api/partner/register", "function": "registerPartner" },
-      { "source": "/api/partner/metrics", "function": "getPartnerMetrics" },
-      { "source": "/api/metrics/summary", "function": "getMetricsSummary" },
+      { "source": "/api/completeOnboardingStep", "function": "completeOnboardingStep" }, // Added new route
+      { "source": "/api/getMyMetrics", "function": "getMyMetrics" },
       { "source": "/api/partner/approve", "function": "approvePartner" },
       { "source": "/api/getFirebaseConfig", "function": "getFirebaseConfig" },
       { "source": "/api/health", "function": "healthCheck" },
