@@ -1,5 +1,33 @@
 // public/js/partner-dashboard.js
-document.addEventListener('DOMContentLoaded', async () => {
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// This auth logic is now part of the main dashboard flow
+async function getFirebaseConfigData() {
+    const response = await fetch('/api/getFirebaseConfig');
+    return await response.json();
+}
+
+async function fetchPersonalizedMetrics(user) {
+    if (!user) {
+        throw new Error("User not authenticated.");
+    }
+
+    const idToken = await user.getIdToken();
+    const response = await fetch('/api/getMyMetrics', {
+        headers: {
+            'Authorization': `Bearer ${idToken}`,
+        },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `API returned status ${response.status}`);
+    }
+    return await response.json();
+}
+
+async function renderDashboard() {
     const loadingEl = document.getElementById('loading');
     const contentEl = document.getElementById('dashboard-content');
     const totalClicksEl = document.getElementById('total-clicks');
@@ -7,14 +35,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const totalCommissionEl = document.getElementById('total-commission');
 
     try {
-        // Fetch summary data from our live API
-        const response = await fetch('/api/metrics/summary');
-        if (!response.ok) {
-            throw new Error(`API returned status ${response.status}`);
-        }
-        const summary = await response.json();
+        const firebaseConfig = await getFirebaseConfigData();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const user = auth.currentUser;
 
-        // Update the UI with real data
+        const summary = await fetchPersonalizedMetrics(user);
+
+        // Update the UI with personalized data
         if (totalClicksEl) totalClicksEl.textContent = summary.totalClicks.toLocaleString();
         if (totalSalesEl) totalSalesEl.textContent = summary.totalSales.toLocaleString();
         if (totalCommissionEl) totalCommissionEl.textContent = `$${summary.totalCommission.toFixed(2)}`;
@@ -24,36 +52,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Clicks', 'Sales'],
+                labels: ['Your Clicks', 'Your Sales'],
                 datasets: [{
-                    label: 'Performance Summary',
+                    label: 'Your Performance',
                     data: [summary.totalClicks, summary.totalSales],
-                    backgroundColor: [
-                        'rgba(59, 130, 246, 0.5)',
-                        'rgba(16, 185, 129, 0.5)',
-                    ],
-                    borderColor: [
-                        'rgba(59, 130, 246, 1)',
-                        'rgba(16, 185, 129, 1)',
-                    ],
+                    backgroundColor: ['rgba(59, 130, 246, 0.5)', 'rgba(16, 185, 129, 0.5)'],
+                    borderColor: ['rgba(59, 130, 246, 1)', 'rgba(16, 185, 129, 1)'],
                     borderWidth: 1
                 }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
             }
         });
 
-        // Show the dashboard content
         loadingEl.classList.add('hidden');
         contentEl.classList.remove('hidden');
 
     } catch (error) {
-        loadingEl.textContent = `Failed to load dashboard: ${error.message}`;
+        loadingEl.textContent = `Failed to load your dashboard: ${error.message}`;
         loadingEl.classList.add('text-red-500');
     }
-});
+}
+
+// The auth guard will ensure this runs only when the user is authenticated
+renderDashboard();
