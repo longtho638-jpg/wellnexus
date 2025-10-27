@@ -4,8 +4,8 @@
     "cleanUrls": true,
     "trailingSlash": false,
     "rewrites": [
-      { "source": "/api/generateReferralCode", "function": "generateReferralCode" }, // Added new route
-      // ... (other routes)
+      { "source": "/api/**", "function": "apiHandler" }, // Simplified to a single handler
+      { "source": "**", "destination": "/index.html" }
     ]
   },
   "functions": {
