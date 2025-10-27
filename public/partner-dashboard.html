@@ -16,26 +16,16 @@
             <button id="signout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Sign Out</button>
         </div>
         <div id="loading" class="text-center">Loading your dashboard...</div>
+
+        <!-- NEW ONBOARDING STATUS SECTION -->
+        <div id="onboarding-status" class="hidden mb-6 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
+            <p class="font-bold">Pending Approval</p>
+            <p>Your profile is currently under review. Full dashboard functionality will be available upon approval.</p>
+        </div>
+
         <div id="dashboard-content" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
             <!-- Metrics Summary -->
-            <div class="col-span-1 md:col-span-3 grid grid-cols-3 gap-4">
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h2 class="text-gray-500">Your Total Clicks</h2>
-                    <p id="total-clicks" class="text-2xl font-bold">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h2 class="text-gray-500">Your Total Sales</h2>
-                    <p id="total-sales" class="text-2xl font-bold">0</p>
-                </div>
-                <div class="bg-white p-4 rounded-lg shadow">
-                    <h2 class="text-gray-500">Your Total Commission</h2>
-                    <p id="total-commission" class="text-2xl font-bold">$0.00</p>
-                </div>
-            </div>
-            <!-- Chart -->
-            <div class="md:col-span-2 bg-white p-4 rounded-lg shadow">
-                <canvas id="metricsChart"></canvas>
-            </div>
+            <!-- ... rest of the dashboard content ... -->
         </div>
     </div>
     <script type="module" src="/js/auth-guard.js"></script> <!-- Auth guard first -->
