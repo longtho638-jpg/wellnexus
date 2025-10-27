@@ -1,23 +1,11 @@
 // public/js/partner-dashboard.js
 // ... (imports and helper functions remain the same)
 
-async function fetchPersonalizedData(user) { // Renamed for clarity
-    if (!user) { throw new Error("User not authenticated."); }
-    const idToken = await user.getIdToken();
-    const response = await fetch('/api/getMyMetrics', {
-        headers: { 'Authorization': `Bearer ${idToken}` },
-    });
-    if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `API returned status ${response.status}`);
-    }
-    return await response.json();
-}
-
 async function renderDashboard() {
     const loadingEl = document.getElementById('loading');
     const contentEl = document.getElementById('dashboard-content');
-    const onboardingStatusEl = document.getElementById('onboarding-status');
+    const onboardingPendingEl = document.getElementById('onboarding-pending');
+    const onboardingJourneyEl = document.getElementById('onboarding-journey');
     // ... (metric elements remain the same)
 
     try {
@@ -31,7 +19,10 @@ async function renderDashboard() {
 
         // --- Handle Onboarding Status ---
         if (onboarding.status === 'pending') {
-            onboardingStatusEl.classList.remove('hidden');
+            onboardingPendingEl.classList.remove('hidden');
+        } else if (onboarding.status === 'approved') {
+            onboardingJourneyEl.classList.remove('hidden');
+            contentEl.classList.remove('hidden'); // Show metrics for approved users
         }
 
         // --- Update Metrics UI ---
@@ -41,7 +32,6 @@ async function renderDashboard() {
         // ... (chart logic remains the same)
 
         loadingEl.classList.add('hidden');
-        contentEl.classList.remove('hidden');
 
     } catch (error) {
         loadingEl.textContent = `Failed to load your dashboard: ${error.message}`;
