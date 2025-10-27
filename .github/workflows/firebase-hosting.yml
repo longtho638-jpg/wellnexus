@@ -1,0 +1,33 @@
+# .github/workflows/firebase-hosting.yml
+name: 🔥 Firebase Hosting Deploy (WellNexus)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🧱 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20 # Using Node 20 as required by our backend functions
+
+      # This step assumes a root package.json for build tools if needed
+      # In our SPA case, we build inside the 'public' or 'frontend' folder
+
+      - name: 🚀 Deploy to Firebase
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_APEX_BA819 }}'
+          projectId: 'apex-ba819' # Correct Project ID
+          channelId: '${{ github.event_name == ''pull_request'' && format(''pr-{0}'', github.event.number) || ''live'' }}'
+          args: --only hosting,functions
