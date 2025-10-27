@@ -1,20 +1,17 @@
 {
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs20"
-  },
-  "firestore": {
-    "rules": "firestore.rules"
-  },
   "hosting": {
     "public": "public",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "cleanUrls": true,
+    "trailingSlash": false,
     "rewrites": [
       { "source": "/api/partner/register", "function": "registerPartner" },
       { "source": "/api/partner/metrics", "function": "getPartnerMetrics" },
       { "source": "/api/metrics/summary", "function": "getMetricsSummary" },
-      { "source": "/api/health", "function": "healthCheck" },
-      { "source": "**", "destination": "/index.html" }
+      { "source": "/api/health", "function": "healthCheck" }
     ]
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
   }
 }
