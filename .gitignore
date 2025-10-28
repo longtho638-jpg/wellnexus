@@ -1,4 +1,4 @@
-*.json
 node_modules
+functions/dist
 .DS_Store
 .env
