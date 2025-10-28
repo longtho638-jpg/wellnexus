@@ -1,14 +1,99 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Partner Metrics</title>
-  <script src="partner-metrics.js" defer></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 p-4">
-  <h1 class="text-2xl font-bold mb-4">Partner Metrics</h1>
-  <div id="metrics" class="space-y-2"></div>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Partner Metrics Dashboard</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-800">
+    <noscript>
+      <div class="bg-yellow-100 text-yellow-900 px-4 py-3 text-center">
+        JavaScript is required to view partner metrics.
+      </div>
+    </noscript>
+    <header class="bg-white shadow">
+      <div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-6">
+        <div>
+          <p class="text-sm uppercase tracking-wide text-indigo-500">Wellnexus</p>
+          <h1 class="mt-1 text-2xl font-semibold">Partner Metrics Dashboard</h1>
+        </div>
+        <img src="/badges/deploy.svg" alt="Deployment status" class="h-8" />
+      </div>
+    </header>
+    <main class="mx-auto max-w-5xl px-4 py-10">
+      <section class="mb-8 rounded-lg bg-white p-6 shadow">
+        <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 class="text-xl font-semibold">Filters</h2>
+            <p class="text-sm text-gray-500">
+              Select a partner to view their latest engagement metrics.
+            </p>
+          </div>
+          <form id="filters" class="flex flex-col gap-3 md:flex-row md:items-center">
+            <label class="flex flex-col text-sm font-medium text-gray-600">
+              Partner
+              <select
+                id="partner-filter"
+                class="mt-1 rounded border border-gray-300 bg-white px-3 py-2 text-gray-800 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">All partners</option>
+              </select>
+            </label>
+            <label class="flex flex-col text-sm font-medium text-gray-600">
+              Updated within
+              <select
+                id="updated-filter"
+                class="mt-1 rounded border border-gray-300 bg-white px-3 py-2 text-gray-800 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Any time</option>
+                <option value="24h">Last 24 hours</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+              </select>
+            </label>
+            <label class="flex flex-col text-sm font-medium text-gray-600">
+              Result limit
+              <select
+                id="limit-filter"
+                class="mt-1 rounded border border-gray-300 bg-white px-3 py-2 text-gray-800 focus:border-indigo-500 focus:outline-none"
+              >
+                <option value="">Show all</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              id="refresh"
+              class="rounded bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring"
+            >
+              Refresh
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <section class="space-y-6">
+        <div
+          id="status"
+          class="rounded-lg border border-dashed border-indigo-300 bg-indigo-50 px-4 py-3 text-sm text-indigo-700"
+          role="status"
+        >
+          Loading partner metrics…
+        </div>
+
+        <div id="totals" class="grid gap-4 md:grid-cols-3"></div>
+
+        <div id="metrics" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"></div>
+      </section>
+    </main>
+
+    <script src="partner-metrics.js" type="module"></script>
+  </body>
 </html>
