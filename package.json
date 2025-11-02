@@ -1,0 +1,25 @@
+{
+  "name": "wellnexus",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "setup": "npm --prefix functions ci",
+    "lint": "npm --prefix functions run lint",
+    "build": "npm --prefix functions run build",
+    "test": "npm run lint && npm run build && npm --prefix functions run test",
+    "deploy": "npm run test && npm run deploy:only",
+    "deploy:only": "npx firebase deploy --only hosting,functions",
+    "emulate": "npx firebase emulators:start --only hosting,functions",
+    "ensure:functions": "node ./scripts/ensureFunctionsDeps.cjs",
+    "prelint": "npm run ensure:functions",
+    "prebuild": "npm run ensure:functions",
+    "pretest": "npm run ensure:functions",
+    "predeploy": "npm run ensure:functions",
+    "predeploy:only": "npm run ensure:functions"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.12.0"
+  }
+}

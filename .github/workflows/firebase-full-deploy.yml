@@ -1,53 +1,4 @@
-name: ⚡ Zen CI/CD – Full Firebase Deploy (Hosting + Functions + SeedTree)
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: 🧩 Checkout
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
-      - name: 📦 Install dependencies
-        working-directory: functions
-        run: npm install --legacy-peer-deps --no-audit --no-fund
-
-      - name: 🧱 Build TypeScript
-        working-directory: functions
-        run: npm run build
-
-      - name: ⚙️ Verify Firebase config
-        working-directory: functions
-        run: |
-          echo "Checking Firebase configuration..."
-          if [ ! -f ../firebase.json ]; then
-            echo "❌ Missing firebase.json at repo root"
-            exit 1
-          fi
-
-      - name: 🚀 Deploy to Firebase
-        working-directory: functions
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-        run: firebase deploy --only hosting,functions --token "$FIREBASE_TOKEN"
-
-      - name: ✅ Done
-        run: echo "🎉 Deployment finished successfully!"
-
-name: ⚡ Zen CI/CD – Full Firebase Deploy (Hosting + Functions + SeedTree)
+name: ⚡ Firebase Deploy
 
 on:
   push:
@@ -56,64 +7,36 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
+  test-and-deploy:
     runs-on: ubuntu-latest
-    name: 🔥 Build & Deploy Full Firebase Stack
+    permissions:
+      contents: read
 
     steps:
-      # 1️⃣ Checkout repository
-      - name: 🧩 Checkout
+      - name: 🧩 Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Setup Node (with caching)
-      - name: 🔧 Setup Node.js
+      - name: 🔧 Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+          cache: "npm"
 
-      # 3️⃣ Install root dependencies
-      - name: 📦 Install dependencies
-        run: |
-          npm install --legacy-peer-deps --no-audit --no-fund
+      - name: 📦 Install root toolchain
+        run: npm ci
 
-      # 4️⃣ Build frontend (if exists)
-      - name: 🧱 Build frontend
-        run: |
-          if [ -f "package.json" ]; then
-            echo "🧱 Building frontend..."
-            npm run build || echo "⚠️ No build script found — skipping"
-          else
-            echo "⚠️ No package.json found — skipping frontend build"
-          fi
+      - name: 📦 Install Firebase Functions deps
+        run: npm run setup
 
-      # 5️⃣ Build Firebase Functions
-      - name: ⚙️ Build Firebase Functions
-        run: |
-          if [ -d "functions" ]; then
-            echo "⚙️ Building Firebase Functions..."
-            cd functions
-            npm install --legacy-peer-deps --no-audit --no-fund
-            npm run build || echo "⚠️ No build script in functions/"
-            cd ..
-          else
-            echo "⚠️ No functions directory — skipping"
-          fi
+      - name: ✅ Type-check & build
+        run: npm run test
 
-      # 6️⃣ Deploy Hosting + Functions + SeedTree
       - name: 🚀 Deploy to Firebase
+        if: github.event_name == 'push'
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_APEX_BA819 }}
-        run: |
-          echo "🚀 Deploying Hosting + Functions + SeedTree..."
-          firebase deploy \
-            --only hosting,functions,database \
-            --project apex-ba819 \
-            --non-interactive \
-            --force
+        run: npm run deploy:only -- --project apex-ba819 --non-interactive --force
 
-      # 7️⃣ Optional – Slack/Discord Notification (Future hook)
-      # - name: 📣 Notify Success
-      #   if: success()
-      #   run: echo "✅ Deploy completed for commit $GITHUB_SHA"
-
-# minor tweak
+      - name: 🔍 Deployment skipped for PRs
+        if: github.event_name == 'pull_request'
+        run: echo "Skipping deploy for pull request builds."
