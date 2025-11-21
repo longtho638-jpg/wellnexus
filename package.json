@@ -5,9 +5,12 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "setup": "npm --prefix functions ci",
+    "setup": "npm --prefix functions ci && npm --prefix client ci",
+    "dev": "npm --prefix client run dev",
+    "build:client": "npm --prefix client run build",
+    "build:functions": "npm --prefix functions run build",
+    "build": "npm run build:client && npm run build:functions",
     "lint": "npm --prefix functions run lint",
-    "build": "npm --prefix functions run build",
     "test": "npm run lint && npm run build",
     "deploy": "npm run test && npm run deploy:only",
     "deploy:only": "npx firebase deploy --only hosting,functions",

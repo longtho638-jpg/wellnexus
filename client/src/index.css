@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* WellNexus Brand Colors */
+  --color-wellnexus-primary: #115e59;
+  --color-wellnexus-primary-light: #14b8a6;
+  --color-wellnexus-primary-dark: #0f766e;
+  --color-wellnexus-accent: #eab308;
+  --color-wellnexus-accent-light: #fde047;
+  --color-wellnexus-accent-dark: #ca8a04;
+  --color-wellnexus-bg: #f8fafc;
+  --color-wellnexus-bg-dark: #e2e8f0;
+
+  /* Custom radius */
+  --radius-wellnexus: 1rem;
+
+  /* Custom shadows */
+  --shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  --shadow-glass-hover: 0 8px 32px 0 rgba(31, 38, 135, 0.25);
+
+  /* Custom blur */
+  --blur-glass: 10px;
+
+  /* Font family */
+  --font-sans: Inter, Montserrat, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-wellnexus-bg);
+    color: rgb(17 24 39);
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  /* Glassmorphism Card */
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-glass rounded-wellnexus shadow-glass;
+    @apply border border-white/20;
+  }
+
+  .glass-card:hover {
+    @apply shadow-glass-hover;
+  }
+
+  /* CTA Buttons - Mobile First, Thumb-friendly */
+  .btn-primary {
+    @apply bg-wellnexus-primary text-white font-semibold;
+    @apply px-6 py-4 rounded-wellnexus shadow-md;
+    @apply hover:bg-wellnexus-primary-dark active:scale-95;
+    @apply transition-all duration-200;
+    @apply min-h-[56px]; /* iOS thumb-friendly */
+  }
+
+  .btn-accent {
+    @apply bg-wellnexus-accent text-wellnexus-primary font-bold;
+    @apply px-6 py-4 rounded-wellnexus shadow-md;
+    @apply hover:bg-wellnexus-accent-dark active:scale-95;
+    @apply transition-all duration-200;
+    @apply min-h-[56px];
+  }
+
+  .btn-outline {
+    @apply border-2 border-wellnexus-primary text-wellnexus-primary font-semibold;
+    @apply px-6 py-4 rounded-wellnexus;
+    @apply hover:bg-wellnexus-primary hover:text-white active:scale-95;
+    @apply transition-all duration-200;
+    @apply min-h-[56px];
+  }
+
+  /* Progress Bar */
+  .progress-bar {
+    @apply relative w-full h-3 bg-gray-200 rounded-full overflow-hidden;
+  }
+
+  .progress-bar-fill {
+    @apply absolute top-0 left-0 h-full bg-gradient-to-r from-wellnexus-accent to-wellnexus-accent-light;
+    @apply transition-all duration-500 ease-out;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-wellnexus-primary to-wellnexus-primary-light;
+    @apply bg-clip-text text-transparent;
+  }
+
+  .bg-gradient-brand {
+    @apply bg-gradient-to-br from-wellnexus-primary via-wellnexus-primary-light to-wellnexus-accent;
+  }
+}

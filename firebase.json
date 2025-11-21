@@ -51,6 +51,10 @@
       {
         "source": "/api/partner/metrics",
         "function": "partnerMetrics"
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
       }
     ]
   }
